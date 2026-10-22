@@ -1,0 +1,59 @@
+name: Publish client
+on:
+  push:
+    branches: [main]
+    paths: [packages/client/package.json]
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: publish-client
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main' && vars.NPM_TRUSTED_PUBLISHING == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          version: 2026.10.17
+          install_args: bun node
+      - id: version
+        run: bun scripts/publishDecision.ts
+      - if: steps.version.outputs.publish == 'true'
+        run: bun install --frozen-lockfile && bun run check && bun run test && bun run build && bun run package:smoke
+      - if: steps.version.outputs.publish == 'true'
+        working-directory: packages/client
+        run: |
+          mkdir -p ../../dist
+          bun pm pack --destination ../../dist
+      - if: steps.version.outputs.publish == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-package
+          path: dist/*.tgz
+          if-no-files-found: error
+  publish:
+    needs: prepare
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: client-package
+          path: dist
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - run: npm publish dist/*.tgz --access public --ignore-scripts

@@ -1,0 +1,27 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "ct-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-16",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "ct.a2f0.net", "custom_domain": true }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ct",
+      "database_id": "a71d26e8-beac-4481-8fb7-5850975e6f2e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "INGEST_LIMITER",
+      "namespace_id": "782001",
+      "simple": { "limit": 120, "period": 60 }
+    }
+  ],
+  "vars": { "SITES": { "skyline": ["https://skyline.devopsrockstars.com"] } },
+  "triggers": { "crons": ["17 3 * * *"] },
+  "observability": { "enabled": false }
+}

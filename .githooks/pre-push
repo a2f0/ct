@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+bun run check
+bun run test
+bun run build
+bun run package:smoke

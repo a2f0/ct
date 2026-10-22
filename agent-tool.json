@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "subject": {
+    "maxLength": 50
+  },
+  "merge": {
+    "requiredChecks": [
+      {
+        "name": "verify",
+        "workflow": "CI"
+      }
+    ]
+  },
+  "versions": {
+    "packages": ["packages/client"]
+  },
+  "images": {
+    "targets": {
+      "extension": {
+        "dir": "packages/extension/dist/icons",
+        "outputs": [
+          {
+            "path": "16.png",
+            "size": 16,
+            "layers": [
+              {
+                "source": "logo"
+              }
+            ]
+          },
+          {
+            "path": "32.png",
+            "size": 32,
+            "layers": [
+              {
+                "source": "logo"
+              }
+            ]
+          },
+          {
+            "path": "48.png",
+            "size": 48,
+            "layers": [
+              {
+                "source": "logo"
+              }
+            ]
+          },
+          {
+            "path": "128.png",
+            "size": 128,
+            "layers": [
+              {
+                "source": "logo"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

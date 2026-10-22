@@ -1,0 +1,61 @@
+# @a2f0/ct-client
+
+Framework-free, batched click tracking. Importing or constructing a tracker starts
+no listeners, timers, storage writes, or requests. Call init explicitly in the
+production browser bootstrap; keep that call out of shared components and tests.
+
+```ts
+import { createTracker } from '@a2f0/ct-client';
+const tracker = createTracker({
+  site: 'skyline',
+  capture: 'all',
+  page: () => '/skyline-3d',
+});
+tracker.init();
+await tracker.flush();
+tracker.setOptOut(true);
+tracker.destroy();
+```
+
+The site must be registered with its exact origin at the API. The default endpoint
+is https://ct.a2f0.net/v1/clicks. Browser ESM is self-contained; TypeScript types
+are included. There are no runtime dependencies.
+
+## Options
+
+| Option | Default | Behavior |
+| --- | --- | --- |
+| site | Required | Public site identifier, lowercase letters/numbers/hyphens |
+| page | () => '/' | Stable route template, maximum 200 characters |
+| capture | interactive | all elements, interactive controls, or marked elements |
+| batchSize | 20 | 1–50 clicks per request |
+| flushIntervalMs | 5000 | 100–60000 milliseconds |
+| maxQueueSize | 500 | Bounded between batch size and 1000 |
+| enabled | true | false makes init inert |
+| endpoint | CT endpoint | HTTPS, or HTTP on localhost for development |
+
+capture values are 'all', 'interactive', and 'marked'. Assign a stable label with
+data-ct="open-building". Never put user content in this attribute. Use
+data-ct-ignore on an element or ancestor to exclude a subtree. Inputs, textareas,
+selects, and editable content are always excluded. Open shadow DOM and SVG work.
+
+Only trusted clicks are captured. init is idempotent and returns whether capture
+is currently allowed. destroy removes listeners, aborts requests, and discards
+the queue; a later init can start it again. flush sends one batch and schedules
+remaining work. Network errors, timeouts, 408 and 429 retry with capped backoff;
+other 4xx responses discard the rejected batch. Event IDs make retries idempotent.
+
+## Opt out
+
+setOptOut(true) saves ct:opt-out=1 in localStorage, clears the queue and stops
+capture for this site. setOptOut(false) removes that preference. Trackers also
+honor DNT, Global Privacy Control and the CT extension's data-ct-disabled marker.
+An opt-out cannot retract a request the server already received. Storage errors
+disable tracking. The extension applies across all sites and must be installed
+separately in each browser/profile. Preferences are not synchronized between them.
+
+The queue is in memory. Clicks are dropped when it is full. Page hiding attempts
+a keepalive flush, but closing/crashing/offline navigation can lose unsent events.
+This is best-effort analytics, not an audit trail or billing source. No cookies,
+visitor IDs, local click history, text, hrefs, DOM IDs, classes, or form values
+are collected. page defaults to '/' so dynamic routes are never inferred.
