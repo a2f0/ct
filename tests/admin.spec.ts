@@ -18,6 +18,12 @@ const rows = (start: number, length: number) =>
 test("separate routes load only their own report and preserve filters, reloads and history", async ({
   page,
 }) => {
+  // URLSearchParams.size is absent in older supported browsers.
+  await page.addInitScript(() =>
+    Object.defineProperty(URLSearchParams.prototype, "size", {
+      value: undefined,
+    }),
+  );
   const errors: string[] = [];
   const requests: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -29,6 +35,7 @@ test("separate routes load only their own report and preserve filters, reloads a
   await expect(
     page.getByRole("heading", { name: "Click activity." }),
   ).toBeVisible();
+  await expect(page.getByText("Public · read only")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Refresh data" }),
   ).toBeEnabled();
@@ -79,6 +86,7 @@ test("separate routes load only their own report and preserve filters, reloads a
     page.getByRole("button", { name: "30 days", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "30 days", exact: true }).click();
+  // Re-selecting the active range must not erase the loaded report.
   await expect(page.getByRole("table")).toBeVisible();
   await page.screenshot({
     path: `test-results/recent-${test.info().project.name}.png`,
@@ -175,7 +183,7 @@ test("a failed page pauses automatic loading and supports keyboard retry", async
   expect(pages).toBe(2);
 });
 
-for (const action of ["refresh", "filter"] as const) {
+for (const action of ["refresh", "site filter", "date filter"] as const) {
   test(`${action} cancels pending pagination and replaces the old rows`, async ({
     page,
   }) => {
@@ -209,10 +217,12 @@ for (const action of ["refresh", "filter"] as const) {
     await requested;
     if (action === "refresh")
       await page.getByRole("button", { name: "Refresh data" }).click();
-    else
+    else if (action === "site filter")
       await page
         .getByRole("combobox", { name: "Site", exact: true })
         .selectOption("skyline");
+    else
+      await page.getByRole("button", { name: "30 days", exact: true }).click();
     await expect(
       page.getByRole("cell", { name: "click-10", exact: true }),
     ).toBeVisible();
@@ -261,4 +271,104 @@ test("manual pagination works without IntersectionObserver and empty results sto
   await expect(
     page.getByRole("button", { name: "Load more", exact: true }),
   ).toHaveCount(0);
+});
+
+test("invalid URL filters recover to all sites and the default date range", async ({
+  page,
+}) => {
+  await page.goto(`${admin}/recent?days=5&site=bogus`);
+  await expect(page).toHaveURL(`${admin}/recent`);
+  await expect(
+    page.getByRole("table", { name: "Recent clicks" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Site", exact: true }),
+  ).toHaveValue("");
+  await expect(
+    page.getByRole("button", { name: "7 days", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+for (const kind of ["repeated", "cyclic"] as const) {
+  test(`${kind} pagination cursors stop loading until refresh`, async ({
+    page,
+  }) => {
+    const requests: (string | null)[] = [];
+    let initial = 0;
+    await page.route("**/api/events?**", async (route) => {
+      const cursor = new URL(route.request().url()).searchParams.get("cursor");
+      requests.push(cursor);
+      if (!cursor) {
+        const first = ++initial === 1;
+        await route.fulfill({
+          json: {
+            events: rows(first ? 0 : 10, 1),
+            nextCursor: first ? "page-2" : null,
+          },
+        });
+      } else
+        await route.fulfill({
+          json: {
+            events: rows(cursor === "page-2" ? 1 : 2, 1),
+            nextCursor:
+              kind === "cyclic" && cursor === "page-2" ? "page-3" : "page-2",
+          },
+        });
+    });
+    await page.goto(`${admin}/recent`);
+    await expect(page.getByRole("alert")).toContainText("Use Refresh data");
+    await page.waitForTimeout(200); // A cursor loop must not keep issuing requests.
+    expect(requests).toEqual(
+      kind === "repeated" ? [null, "page-2"] : [null, "page-2", "page-3"],
+    );
+    await expect(page.locator("tbody tr")).toHaveCount(
+      kind === "repeated" ? 1 : 2,
+    );
+    await expect(
+      page.getByRole("button", { name: "Retry loading more" }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Refresh data" }).click();
+    await expect(
+      page.getByRole("cell", { name: "click-10", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator("tbody tr")).toHaveCount(1);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
+}
+
+test("overview retains its last successful report when a manual refresh fails", async ({
+  page,
+}) => {
+  let requests = 0;
+  await page.route("**/api/summary?**", async (route) => {
+    requests++;
+    if (requests === 2)
+      await route.fulfill({
+        status: 503,
+        json: { error: "Temporary failure" },
+      });
+    else
+      await route.fulfill({
+        json: {
+          totals: { clicks: requests === 1 ? 5 : 9, sites: 1, pages: 1 },
+          daily: [],
+          pages: [],
+          targets: [],
+        },
+      });
+  });
+  await page.goto(admin);
+  const total = page
+    .locator(".metric")
+    .filter({ hasText: "Total clicks" })
+    .locator("strong");
+  await expect(total).toHaveText("5");
+  await page.getByRole("button", { name: "Refresh data" }).click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(total).toHaveText("5");
+  await expect(page.locator(".updated")).toContainText("Updated");
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(total).toHaveText("9");
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });

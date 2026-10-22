@@ -103,9 +103,6 @@ select:focus-visible {
   background: #294438;
   color: var(--lime);
 }
-.nav-arrow {
-  margin-left: auto;
-}
 .sidebar-bottom {
   margin-top: auto;
   font-size: 12px;

@@ -3,7 +3,14 @@ import { type Events, getData, type Summary } from "./data";
 import { Overview } from "./Overview";
 import { RecentClicks } from "./RecentClicks";
 
-type Report = { from: number; to: number; query: string } & (
+type Report = {
+  from: number;
+  to: number;
+  query: string;
+  site: string;
+  days: number;
+  updated: number;
+} & (
   | { view: "overview"; summary: Summary }
   | { view: "recent"; events: Events }
 );
@@ -24,12 +31,12 @@ export function App() {
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [updated, setUpdated] = useState<number | null>(null);
   const active = useRef<AbortController | null>(null);
   const filters = new URLSearchParams();
   if (site) filters.set("site", site);
   if (days !== 7) filters.set("days", String(days));
-  const search = filters.size ? `?${filters}` : "";
+  const encodedFilters = filters.toString();
+  const search = encodedFilters ? `?${encodedFilters}` : "";
   const href = (path: string) => `${path}${search}`;
 
   useEffect(() => {
@@ -43,8 +50,13 @@ export function App() {
     active.current = controller;
     setLoading(true);
     setError("");
-    setData(null);
-    setUpdated(null);
+    setData((current) =>
+      current?.view === "overview" &&
+      current.site === site &&
+      current.days === days
+        ? current
+        : null,
+    );
     const to = Date.now();
     const from = to - days * 86_400_000;
     const query = new URLSearchParams({
@@ -65,12 +77,14 @@ export function App() {
         "/api/sites",
         controller.signal,
       ).then((result) => {
-        if (!controller.signal.aborted) setSites(result.sites);
+        if (!controller.signal.aborted) {
+          setSites(result.sites);
+          if (site && !result.sites.includes(site)) setSite("");
+        }
       });
       const [result] = await Promise.all([report, metadata]);
       if (controller.signal.aborted) return;
-      setData({ ...result, from, to, query });
-      setUpdated(Date.now());
+      setData({ ...result, from, to, query, site, days, updated: Date.now() });
     } catch (cause) {
       if (!controller.signal.aborted)
         setError(
@@ -89,7 +103,7 @@ export function App() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="CT home">
+        <a className="brand" href={href("/")} aria-label="CT home">
           <span className="brand-mark">↖</span>
           <span>
             ct<span className="brand-dot">.</span>
@@ -186,8 +200,8 @@ export function App() {
             ))}
           </fieldset>
           <span className="updated">
-            {updated
-              ? `Updated ${new Date(updated).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" })}`
+            {data
+              ? `Updated ${new Date(data.updated).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" })}`
               : "Waiting for data"}
           </span>
         </div>

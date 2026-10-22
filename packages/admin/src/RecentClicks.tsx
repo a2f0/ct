@@ -11,6 +11,7 @@ export function RecentClicks({
   const [data, setData] = useState(initial);
   const [paging, setPaging] = useState(false);
   const [error, setError] = useState("");
+  const [requiresRefresh, setRequiresRefresh] = useState(false);
   const active = useRef<AbortController | null>(null);
   const busy = useRef(false);
   const consumed = useRef(new Set<string>());
@@ -36,10 +37,12 @@ export function RecentClicks({
       if (
         next.nextCursor &&
         (next.nextCursor === cursor || consumed.current.has(next.nextCursor))
-      )
+      ) {
+        setRequiresRefresh(true);
         throw new Error(
-          "Could not load older clicks. Refresh data to try again.",
+          "Could not load older clicks. Use Refresh data to restart this list.",
         );
+      }
       consumed.current.add(cursor);
       setData((current) => {
         const seen = new Set(
@@ -142,7 +145,7 @@ export function RecentClicks({
             {error}
           </p>
         )}
-        {data.nextCursor && (
+        {data.nextCursor && !requiresRefresh && (
           <button
             className="load-more"
             disabled={paging}
