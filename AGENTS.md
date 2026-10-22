@@ -20,7 +20,9 @@ when requested, using bun run deploy; bun run deploy:preview changes no remote s
 
 The admin UI and its data API are intentionally public and read-only for the
 initial release. Do not add authentication without a request. Do not add raw text,
-form values, URLs, user identifiers, or persistent visitor identifiers to clicks.
+form values, URLs, or client-supplied user identifiers to clicks. The server records
+request IP addresses and coarse Cloudflare location metadata as documented in
+docs/privacy.md; do not add separate visitor profiles or session identifiers.
 The client must remain inert until init, honor opt-outs before capture and flush,
 and refuse automated browsers. The per-tracker overrideGpc option may bypass only
 GPC when explicitly true; it defaults to false. Cover behavioral changes with tests.

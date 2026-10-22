@@ -1,4 +1,5 @@
 import { DAY, type Env, json, RETENTION_DAYS } from "./env";
+import { requestLocation } from "./location";
 import { normalizeTimes, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
@@ -75,11 +76,19 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
   if (!normalized)
     return json({ error: "Inconsistent event timestamps" }, 400, cors);
   const statement = env.DB.prepare(
-    "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(site, id) DO NOTHING",
+    "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, ip_address, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT id FROM locations WHERE location_key = ?)) ON CONFLICT(site, id) DO NOTHING",
   );
+  const location = requestLocation(request);
   try {
-    await env.DB.batch(
-      normalized.map((event) =>
+    const statements: D1PreparedStatement[] = [];
+    if (location.key)
+      statements.push(
+        env.DB.prepare(
+          "INSERT INTO locations (location_key, continent, country, region, region_code, city, timezone) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(location_key) DO NOTHING",
+        ).bind(location.key, ...location.values),
+      );
+    statements.push(
+      ...normalized.map((event) =>
         statement.bind(
           site,
           event.id.toLowerCase(),
@@ -88,9 +97,12 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
           event.page,
           event.target,
           event.label,
+          location.ip,
+          location.key,
         ),
       ),
     );
+    await env.DB.batch(statements);
   } catch {
     return json({ error: "Storage temporarily unavailable" }, 503, cors);
   }
@@ -100,8 +112,13 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
 export default {
   fetch: ingest,
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
-    await env.DB.prepare("DELETE FROM clicks WHERE timestamp < ?")
-      .bind(Date.now() - RETENTION_DAYS * DAY)
-      .run();
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM clicks WHERE timestamp < ?").bind(
+        Date.now() - RETENTION_DAYS * DAY,
+      ),
+      env.DB.prepare(
+        "DELETE FROM locations WHERE NOT EXISTS (SELECT 1 FROM clicks WHERE clicks.location_id = locations.id)",
+      ),
+    ]);
   },
 } satisfies ExportedHandler<Env>;

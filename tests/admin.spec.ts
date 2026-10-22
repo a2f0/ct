@@ -10,6 +10,8 @@ function event(index: number): ClickRow {
     page: `/page-${index}`,
     target: "button",
     label: `click-${index}`,
+    ip: null,
+    location: null,
   };
 }
 const rows = (start: number, length: number) =>

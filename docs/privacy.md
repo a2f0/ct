@@ -14,11 +14,32 @@ pagination cursors to avoid exposing ordinary delivery batches. When a device's
 clock is outside the accepted window, the batch is shifted so its newest click
 uses server time while preserving the spacing between its clicks.
 
-IP addresses are used transiently by Cloudflare's rate limiter and are not stored
-in D1. Worker request observability is disabled. Cloudflare still processes network
-requests as the hosting provider. No claims are made about visitors or unique users.
+The ingestion Worker stores the request IP address from Cloudflare's
+CF-Connecting-IP header (or the preserved IPv6 address in Pseudo IPv4 overwrite
+mode). It also reads Cloudflare's request.cf country, continent, state/region,
+region code, city, and timezone. These fields are public through the dashboard
+and data API, including full IP addresses. IPs can identify or link activity and
+must not be described as anonymous data. There is no separate visitor profile,
+session ID, browser geolocation prompt, or external geolocation service.
 
-Events older than 90 days are deleted daily. Cloudflare D1 recovery may retain
+These are the network address and approximate location at batch delivery, not
+necessarily at click time. VPNs, proxies, mobile networks, and shared addresses
+can change or obscure the location; these fields do not establish a person's
+identity or physical position. Missing metadata and historical rows stay null
+and appear as Unknown. No historical IPs or locations are inferred or backfilled.
+Coordinates, street addresses, postal codes, and raw user-agent strings are not
+collected. The client cannot supply IP/location fields in click payloads.
+
+Locations are deduplicated by their complete geographic tuple, not by IP, and
+joined to clicks. An IP can change location over time without rewriting old
+clicks. Duplicate event retries preserve the first successful receipt's IP and
+location. Worker request observability remains disabled. Cloudflare still
+processes network requests as the hosting provider. No unique-user count is
+derived from IP addresses.
+
+Events and their IP addresses older than 90 days are deleted daily; the same
+transaction removes locations no longer referenced by retained events.
+Cloudflare D1 recovery may retain
 previous data according to the account's Time Travel window. The client queue is
 bounded, in memory, and best-effort: it retries transient failures while the page
 is open, and attempts keepalive delivery when hidden. Closed/offline/crashed pages
@@ -34,3 +55,6 @@ Disabling clears the queue and aborts an in-flight request when possible.
 It cannot erase data already received. Synthetic clicks and webdriver browsers are
 excluded. init must still be called only by the consumer's production bootstrap,
 guarded by the exact origin.
+
+The admin stores only its dark/light theme preference in local browser storage
+(ct.theme). This preference is never sent with click events or used as an identifier.

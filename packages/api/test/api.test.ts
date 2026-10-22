@@ -216,7 +216,9 @@ test("pagination has no gaps or repeats for tied timestamps across sites", async
   for (const site of ["skyline", "other"])
     for (const id of ids)
       storage.sqlite
-        .query("INSERT INTO clicks VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .query(
+          "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        )
         .run(site, id, now, now, "/", "svg", null);
   const first = (await (
     await admin(new Request("https://ct-admin.a2f0.net/api/events"), adminEnv())
@@ -243,7 +245,9 @@ test("public rows and cursors use click time without exposing batch receipt time
   const now = Date.now();
   for (let index = 0; index < 101; index++)
     storage.sqlite
-      .query("INSERT INTO clicks VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .query(
+        "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      )
       .run(
         "skyline",
         crypto.randomUUID(),
@@ -332,7 +336,9 @@ test("rejects invalid admin filters and cursors; assets have CSP", async () => {
 
 test("daily retention removes only events older than 90 days", async () => {
   storage.sqlite
-    .query("INSERT INTO clicks VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .query(
+      "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
     .run(
       "skyline",
       crypto.randomUUID(),

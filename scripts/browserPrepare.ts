@@ -3,6 +3,7 @@ export {};
 for (const args of [
   ["d1", "migrations", "apply", "ct-test", "--local"],
   ["d1", "execute", "ct-test", "--local", "--command", "DELETE FROM clicks"],
+  ["d1", "execute", "ct-test", "--local", "--command", "DELETE FROM locations"],
 ]) {
   const child = Bun.spawn(
     [

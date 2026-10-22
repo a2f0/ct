@@ -3,6 +3,7 @@ import { Database } from "bun:sqlite";
 /** Run production SQL against SQLite, including D1 batch transaction semantics. */
 export async function database() {
   const sqlite = new Database(":memory:");
+  sqlite.exec("PRAGMA foreign_keys = ON");
   const directory = `${import.meta.dir}/../migrations`;
   const migrations = Array.from(
     new Bun.Glob("*.sql").scanSync(directory),

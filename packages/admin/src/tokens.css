@@ -1,8 +1,48 @@
+/* Graphite follows a2f0.net's black desk, charcoal panels, and gray text. */
 :root {
-  --paper: #f6f7f2;
-  --forest: #162e25;
+  color-scheme: dark;
+  --paper: #000;
+  --surface: #161616;
+  --surface-muted: #282828;
+  --ink: #e5e5e5;
+  --muted: #aaa;
+  --line: #3b3b3b;
+  --sidebar: #111;
+  --sidebar-ink: #e5e5e5;
+  --sidebar-muted: #aaa;
+  --nav-active: #282828;
+  --nav-ink: #c6eb8a;
   --lime: #c6eb8a;
-  --ink: #23342a;
-  --muted: #788271;
-  --line: #e2e7db;
+  --brand-ink: #162e25;
+  --accent: #c6eb8a;
+  --accent-surface: #283024;
+  --chart: #94b869;
+  --chart-hover: #c6eb8a;
+  --chart-zero: #30382b;
+  --danger: #ec7a74;
+  --danger-surface: #2c1b1a;
+  --danger-line: #7e4541;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --paper: #eee;
+  --surface: #fafafa;
+  --surface-muted: #e4e4e4;
+  --ink: #444;
+  --muted: #666;
+  --line: #b4b4b4;
+  --sidebar: #e4e4e4;
+  --sidebar-ink: #444;
+  --sidebar-muted: #555;
+  --nav-active: #cdcdcd;
+  --nav-ink: #315518;
+  --accent: #426622;
+  --accent-surface: #e7eddf;
+  --chart: #6e8c4c;
+  --chart-hover: #426622;
+  --chart-zero: #d4dfc8;
+  --danger: #a52620;
+  --danger-surface: #fff0ed;
+  --danger-line: #b7645a;
 }
