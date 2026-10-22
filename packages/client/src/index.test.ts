@@ -129,9 +129,9 @@ describe("click metadata", () => {
       click(`<${tag} data-ct="valid-label">private</${tag}>`);
     await ct.flush();
     expect(requests[0]?.body.events).toHaveLength(4);
-    expect(
-      requests[0]?.body.events.every((event) => validClick(event, Date.now())),
-    ).toBe(true);
+    expect(requests[0]?.body.events.every((event) => validClick(event))).toBe(
+      true,
+    );
   });
   test("captures all target types but no text, attributes or URLs", async () => {
     const ct = tracker({

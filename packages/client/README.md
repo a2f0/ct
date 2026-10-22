@@ -4,6 +4,8 @@ Framework-free, batched click tracking. Importing or constructing a tracker star
 no listeners, timers, storage writes, or requests. Call init explicitly in the
 production browser bootstrap; keep that call out of shared components and tests.
 
+Install with `bun add @a2f0/ct-client` or `npm install @a2f0/ct-client`.
+
 ```ts
 import { createTracker } from '@a2f0/ct-client';
 const tracker = createTracker({
@@ -20,6 +22,8 @@ tracker.destroy();
 The site must be registered with its exact origin at the API. The default endpoint
 is https://ct.a2f0.net/v1/clicks. Browser ESM is self-contained; TypeScript types
 are included. There are no runtime dependencies.
+init throws for an invalid site name or endpoint URL, before adding listeners.
+Validate configuration before initializing the tracker.
 
 ## Options
 

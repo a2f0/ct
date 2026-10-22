@@ -1,5 +1,5 @@
 import { DAY, type Env, json, RETENTION_DAYS } from "./env";
-import { readBody, validClick } from "./validation";
+import { eventTime, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
@@ -29,7 +29,11 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
     });
   if (
     !["application/json", "text/plain"].includes(
-      request.headers.get("Content-Type")?.split(";")[0]?.trim() ?? "",
+      request.headers
+        .get("Content-Type")
+        ?.split(";")[0]
+        ?.trim()
+        .toLowerCase() ?? "",
     )
   )
     return json({ error: "Unsupported content type" }, 415, cors);
@@ -54,6 +58,7 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
   const { site, events } = body as Record<string, unknown>;
   if (
     typeof site !== "string" ||
+    !/^[a-z0-9][a-z0-9-]{0,63}$/.test(site) ||
     !Object.hasOwn(env.SITES, site) ||
     !env.SITES[site]?.includes(origin)
   )
@@ -63,7 +68,7 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
     !Array.isArray(events) ||
     events.length < 1 ||
     events.length > 50 ||
-    !events.every((event) => validClick(event, now))
+    !events.every((event) => validClick(event))
   )
     return json({ error: "Invalid events" }, 400, cors);
   const statement = env.DB.prepare(
@@ -75,7 +80,7 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
         statement.bind(
           site,
           event.id.toLowerCase(),
-          event.timestamp,
+          eventTime(event.timestamp, now),
           now,
           event.page,
           event.target,

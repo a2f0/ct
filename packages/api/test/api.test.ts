@@ -73,7 +73,8 @@ test("validates every event before any write and rejects extra metadata", async 
   for (const invalid of [
     { ...event(), page: "/?email=private" },
     { ...event(), timestamp: 0 },
-    { ...event(), timestamp: Date.now() + 600_000 },
+    { ...event(), timestamp: 1.5 },
+    { ...event(), timestamp: Number.MAX_SAFE_INTEGER + 1 },
     { ...event(), email: "private@example.com" },
     { ...event(), label: "user@example.com" },
   ]) {
@@ -89,6 +90,32 @@ test("validates every event before any write and rejects extra metadata", async 
   expect(
     storage.sqlite.query("SELECT COUNT(*) AS count FROM clicks").get(),
   ).toEqual({ count: 0 });
+});
+
+test("keeps delayed click times and replaces unreasonable device clocks", async () => {
+  const now = Date.now();
+  const timestamps = [now - 60_000, now - 2 * 86_400_000, now + 600_000];
+  const batch = timestamps.map((timestamp) => ({ ...event(), timestamp }));
+  expect(
+    (await ingest(request({ site: "skyline", events: batch }), env)).status,
+  ).toBe(202);
+  for (const [index, click] of batch.entries()) {
+    const row = storage.sqlite
+      .query("SELECT timestamp, received_at FROM clicks WHERE id = ?")
+      .get(click.id) as { timestamp: number; received_at: number };
+    expect(row.timestamp).toBe(index === 0 ? click.timestamp : row.received_at);
+  }
+});
+
+test("accepts case-insensitive media types and rejects invalid configured site names", async () => {
+  const valid = request({ site: "skyline", events: [event()] });
+  valid.headers.set("Content-Type", "Application/JSON; charset=utf-8");
+  expect((await ingest(valid, env)).status).toBe(202);
+  env.SITES.Invalid_Site = [origin];
+  expect(
+    (await ingest(request({ site: "Invalid_Site", events: [event()] }), env))
+      .status,
+  ).toBe(403);
 });
 
 test("enforces batch and byte limits and handles CORS preflight", async () => {
@@ -183,6 +210,35 @@ test("pagination has no gaps or repeats for tied timestamps across sites", async
       [...first.events, ...second.events].map((row) => `${row.site}:${row.id}`),
     ).size,
   ).toBe(120);
+});
+
+test("public rows and cursors use click time without exposing batch receipt time", async () => {
+  const now = Date.now();
+  for (let index = 0; index < 101; index++)
+    storage.sqlite
+      .query("INSERT INTO clicks VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .run(
+        "skyline",
+        crypto.randomUUID(),
+        now - index * 1000,
+        now + index,
+        "/",
+        "svg",
+        null,
+      );
+  const response = await admin(
+    new Request("https://ct-admin.a2f0.net/api/events"),
+    adminEnv(),
+  );
+  const data = (await response.json()) as {
+    events: { timestamp: number; received_at?: number }[];
+    nextCursor: string;
+  };
+  expect(data.events.map((row) => row.timestamp)).toEqual(
+    Array.from({ length: 100 }, (_, index) => now - index * 1000),
+  );
+  expect(data.events.every((row) => !("received_at" in row))).toBe(true);
+  expect(data.nextCursor.split("_")[0]).toBe(String(now - 99_000));
 });
 
 test("uppercase UUID ingestion remains cursor-paginatable", async () => {

@@ -9,7 +9,6 @@ export interface ClickRow {
   site: string;
   id: string;
   timestamp: number;
-  received_at: number;
   page: string;
   target: string;
   label: string | null;
