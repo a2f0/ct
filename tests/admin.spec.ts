@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
 import type { ClickRow } from "../packages/admin/src/data";
+import { expect, test } from "./authenticated";
 
 const admin = "http://127.0.0.1:4176";
 function event(index: number): ClickRow {
@@ -39,7 +39,7 @@ test("separate routes load only their own report and preserve filters, reloads a
   await expect(
     page.getByRole("heading", { name: "Click activity." }),
   ).toBeVisible();
-  await expect(page.getByText("Public · read only")).toBeVisible();
+  await expect(page.getByText("Private · read only")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Refresh data" }),
   ).toBeEnabled();

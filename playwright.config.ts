@@ -29,7 +29,7 @@ export default defineConfig({
     {
       command:
         "bunx --no-install wrangler dev --config tests/wrangler.admin.json --port 4176",
-      url: "http://127.0.0.1:4176/api/sites",
+      url: "http://127.0.0.1:4176/login",
       timeout: 120_000,
     },
     {

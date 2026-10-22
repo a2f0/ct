@@ -30,6 +30,9 @@
       "skyline": {
         "http://127.0.0.1:4174": "production"
       }
-    }
-  }
+    },
+    "BETTER_AUTH_URL": "http://127.0.0.1:4176",
+    "BETTER_AUTH_SECRET": "ct-isolated-browser-test-secret-not-for-production-0001"
+  },
+  "compatibility_flags": ["nodejs_compat"]
 }

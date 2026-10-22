@@ -9,6 +9,7 @@
     "dev": "vite --host 127.0.0.1"
   },
   "dependencies": {
+    "better-auth": "1.7.12",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

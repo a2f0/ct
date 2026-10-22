@@ -1,7 +1,15 @@
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { CLIENT_PROTOCOL } from "../../../scripts/collectorReady";
-import { admin } from "../src/admin";
+import { admin as handleAdmin } from "../src/admin";
+import { authenticateTestAccount, TEST_AUTH } from "./authHelpers";
+
+let cookie = "";
+const admin = (request: Request, env: AdminEnv) => {
+  request.headers.set("Cookie", cookie);
+  return handleAdmin(request, env);
+};
+
 import type { AdminEnv, Env } from "../src/env";
 import { ingest } from "../src/index";
 import { database } from "./database";
@@ -12,6 +20,7 @@ const production = "https://devopsrockstars.com";
 const staging = "https://staging.devopsrockstars.com";
 beforeEach(async () => {
   storage = await database();
+  cookie = await authenticateTestAccount(storage.db);
   env = {
     DB: storage.db,
     SITES: {
@@ -40,6 +49,7 @@ function post(body: unknown, origin = production) {
 }
 async function get(path: string) {
   return admin(new Request(`https://ct-admin.a2f0.net/api/${path}`), {
+    ...TEST_AUTH,
     DB: storage.db,
     SITES: env.SITES,
     READ_LIMITER: env.INGEST_LIMITER,
@@ -298,13 +308,17 @@ test("unknown environments and bounded retained app choices remain available ind
     await get("summary?environment=~unknown&app=app-500")
   ).json()) as { totals: { clicks: number } };
   expect(unknown.totals.clicks).toBe(1);
-  env.DB.prepare = (() => ({
-    bind: () => ({
-      all: async () => {
-        throw new Error("app metadata offline");
-      },
-    }),
-  })) as unknown as D1Database["prepare"];
+  const prepare = env.DB.prepare.bind(env.DB);
+  env.DB.prepare = ((sql: string) =>
+    sql.startsWith("SELECT DISTINCT app")
+      ? {
+          bind: () => ({
+            all: async () => {
+              throw new Error("app metadata offline");
+            },
+          }),
+        }
+      : prepare(sql)) as D1Database["prepare"];
   expect(await (await get("sites")).json()).toMatchObject({
     sites: ["devopsrockstars"],
     apps: [],

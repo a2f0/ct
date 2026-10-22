@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { admin } from "../src/admin";
+import { admin as handleAdmin } from "../src/admin";
+import { authenticateTestAccount, TEST_AUTH } from "./authHelpers";
+
+let cookie = "";
+const admin = (request: Request, env: AdminEnv) => {
+  request.headers.set("Cookie", cookie);
+  return handleAdmin(request, env);
+};
+
 import type { AdminEnv, Env } from "../src/env";
 import worker, { ingest } from "../src/index";
 import { database } from "./database";
@@ -9,6 +17,7 @@ let env: Env;
 const origin = "https://skyline.devopsrockstars.com";
 beforeEach(async () => {
   storage = await database();
+  cookie = await authenticateTestAccount(storage.db);
   env = {
     DB: storage.db,
     SITES: { skyline: { [origin]: "production" } },
@@ -32,6 +41,7 @@ function request(body: unknown, requestOrigin = origin) {
 }
 function adminEnv(): AdminEnv {
   return {
+    ...TEST_AUTH,
     DB: storage.db,
     SITES: env.SITES,
     READ_LIMITER: env.INGEST_LIMITER,
@@ -183,7 +193,7 @@ test("storage failure is retriable; rate limits prevent writes", async () => {
   ).toBe(503);
 });
 
-test("public admin is read-only and aggregates actual SQLite rows", async () => {
+test("authenticated admin is read-only and aggregates actual SQLite rows", async () => {
   await ingest(request({ site: "skyline", events: [event(), event()] }), env);
   const response = await admin(
     new Request("https://ct-admin.a2f0.net/api/summary?site=skyline"),
@@ -380,7 +390,7 @@ test("HTML disables injected analytics while static scripts retain their cache p
     configured,
   );
   expect(html.headers.get("Cache-Control")).toBe(
-    "public, max-age=0, must-revalidate, no-transform",
+    "private, no-store, no-transform",
   );
   expect(html.headers.get("Content-Security-Policy")).toContain(
     "script-src 'self'",

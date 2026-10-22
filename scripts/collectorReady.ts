@@ -1,4 +1,4 @@
-/** Release only after the deployed collector accepts this SDK's wire protocol. */
+/** Release only after collector compatibility and private admin access are live. */
 export const CLIENT_PROTOCOL = 2;
 const collector = "https://ct.a2f0.net";
 
@@ -33,7 +33,18 @@ export async function collectorReady(
         );
       }),
     );
-    return checks.every(Boolean);
+    const privateAdmin = await Promise.all(
+      ["/api/sites", "/api/summary", "/api/events"].map(async (path) => {
+        const response = await fetcher(`https://ct-admin.a2f0.net${path}`, {
+          redirect: "manual",
+          credentials: "omit",
+          cache: "no-store",
+          signal: AbortSignal.timeout(5_000),
+        });
+        return response.status === 401;
+      }),
+    );
+    return checks.every(Boolean) && privateAdmin.every(Boolean);
   } catch {
     return false;
   }
@@ -57,7 +68,7 @@ export async function waitForCollector(
     if (attempt < attempts - 1) await pause();
   }
   throw new Error(
-    "Collector protocol/origins are not ready. Deploy migration and both Workers, then rerun Publish client.",
+    "Collector protocol/origins or authenticated admin access are not ready. Deploy migration and both Workers, then rerun Publish client.",
   );
 }
 
@@ -73,8 +84,10 @@ if (import.meta.main) {
     ),
   ];
   console.log(
-    `Waiting for collector protocol ${CLIENT_PROTOCOL} and ${origins.length} registered origins before publishing.`,
+    `Waiting for collector protocol ${CLIENT_PROTOCOL} and ${origins.length} registered origins, plus private admin APIs, before publishing.`,
   );
   await waitForCollector(origins);
-  console.log("Collector readiness verified without writing click data.");
+  console.log(
+    "Collector and authenticated admin readiness verified without writing click data.",
+  );
 }

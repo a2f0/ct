@@ -23,7 +23,8 @@
     "deploy": "bun scripts/deploy.ts",
     "deploy:preview": "bun scripts/deploy.ts --dry-run",
     "package:smoke": "bun scripts/packageSmoke.ts",
-    "test:extension": "bun run --cwd packages/extension lint:package"
+    "test:extension": "bun run --cwd packages/extension lint:package",
+    "admin:user": "node scripts/adminUser.ts"
   },
   "devDependencies": {
     "@a2f0/agent-tool": "0.1.15",

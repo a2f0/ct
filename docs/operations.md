@@ -22,14 +22,80 @@ custom-domain deployment creates the corresponding DNS routing after the Workers
 are uploaded. Do not reuse another application's database. The scheduled ingestion
 Worker deletes events older than 90 days at 03:17 UTC daily.
 
-After deploying, verify GET /health on the collector, /api/sites and /api/summary
-on the admin host, and a 405 for POST /api/events. Do not generate production clicks
+After deploying, verify GET /health on the collector, unauthenticated 401s for
+/api/sites, /api/summary and /api/events on the admin host, and a redirect to /login
+for /recent. In a signed-in session, verify those GET APIs return 200 and
+POST /api/events returns 405. Do not generate production clicks
 as part of normal tests. A consumer's origin must be listed under its site key in
 both configs, mapped to production or staging. Public site identifiers are not credentials.
 
 Dashboard HTML uses Cache-Control: no-transform to prevent Cloudflare's automatic
 Web Analytics beacon injection, while the CSP permits only our own scripts.
 This follows Cloudflare's [Web Analytics setup guidance](https://developers.cloudflare.com/web-analytics/get-started/).
+
+## Administrator accounts
+
+CT uses Better Auth 1.7.12 with the direct D1 adapter, the same email/password
+stack as Balebase. It has an independent secret and database tables. Migration
+0005_admin_auth.sql creates auth_user, auth_account, auth_session,
+auth_verification and auth_rate_limit with the schema expected by this version;
+there is no legacy issuer column. It is additive and preserves click data.
+
+For the first authentication deployment, list secret names, then create the
+CT-only signing secret if BETTER_AUTH_SECRET is absent. Stream it directly into
+Wrangler without printing it or putting it in arguments or a file:
+
+```sh
+bunx --no-install wrangler secret list --config packages/api/wrangler.admin.json
+openssl rand -base64 48 | bunx --no-install wrangler secret put BETTER_AUTH_SECRET --config packages/api/wrangler.admin.json
+bun run deploy
+```
+
+Do not replace an existing secret during ordinary deployments. Never reuse
+another application's secret. BETTER_AUTH_URL is the public dashboard origin in
+the admin config; trusted origins and POST Origin checks use that exact origin.
+The deploy script applies migrations before uploading either Worker. A missing
+or invalid auth secret fails closed: private routes return 503, never analytics.
+Unauthenticated data requests return 401 with no site names or event metadata;
+private page routes redirect to /login with a same-origin return path. Public
+static assets and extension downloads contain no click data.
+
+Provision an account from a terminal with an authenticated Wrangler session:
+
+```sh
+bun run admin:user -- create --remote --email admin@example.com
+bun run admin:user -- reset --remote --email admin@example.com
+```
+
+The CLI uses pinned Node for Wrangler’s remote binding proxy (Bun still runs the
+workspace command). Both commands prompt for a hidden password and confirmation (12–128 characters).
+Use --local for the local D1 database. Automation can pass one password line via
+stdin with --password-stdin; use a password manager or an in-memory pipe, never a
+literal password in shell history, command arguments, environment variables, logs,
+or a temporary SQL file. The CLI hashes with Better Auth's compatible password
+hasher and uses bound D1 statements in a transaction. Reset replaces the credential
+and revokes every session atomically. No HTTP provisioning or recovery endpoint
+exists, and registration is disabled both in Better Auth and the Worker allowlist.
+
+The only exposed auth routes are sign-in/email, get-session, sign-out, and
+change-password under /api/auth. Mutations require same-origin JSON POSTs and
+bounded request bodies. Database-backed limits allow five sign-in or password
+change attempts per IP per minute, with a general 120/minute auth limit. Production
+session cookies are Secure, HttpOnly, SameSite=Lax and host-only. Sessions expire
+after eight hours and refresh after an hour of activity; no cookie session cache
+bypasses database revocation. Responses are not cached. Signed-in users can change
+their password at /account; it revokes their other sessions. Logout or a data API
+401 clears the current UI report and shows login. There is no email service;
+operator reset is the recovery path. All provisioned accounts have read access to
+all registered sites; no click-writing or account-management HTTP API is exposed.
+
+The isolated browser suite provisions through the actual CLI, runs both Workers,
+and exercises login, private deep links, logout, password change, reset, revoked
+sessions, and registration denial in Chrome and Firefox. Auth unit tests compare
+the migration to the installed Better Auth schema and exercise its real D1 adapter.
+For live verification use only an ephemeral administrator account, keep generated
+credentials/cookies in process memory, and delete that account afterward. Do not
+write synthetic production clicks.
 
 ## API
 
@@ -51,7 +117,7 @@ from and to filters apply to both data endpoints; dates are ISO timestamps, from
 inclusive and to exclusive. Ranges are capped at 90 days plus the end-day boundary.
 Events returns 100 rows in descending click-time order and an opaque nextCursor.
 Server receipt times are internal and are not returned. Pass cursor with the same
-filters for the next page. All endpoints are public and read-only. Responses are
+filters for the next page. All data endpoints require a valid administrator session and remain read-only. Responses are
 not cached. The UI displays UTC event dates and no unique-visitor metric.
 Each event includes app (slug or null), environment (production, staging, or null), ip (IPv4/IPv6 or null) and location (null or continent,
 country, region, regionCode, city, timezone). The Worker adds these from Cloudflare
@@ -150,8 +216,10 @@ Staging, All environments and Unknown environment are explicit choices.
 When an SDK release changes the wire protocol, merge the reviewed change, then
 run `bun run deploy` from the merged main checkout before waiting for npm publish.
 The Publish client workflow waits for `/health` protocolVersion >= 2 and successful
-exact-Origin OPTIONS preflights for every configured origin before handing the
-package to the publish job. It sends no click data. This prevents automatic npm
+exact-Origin OPTIONS preflights for every configured origin, plus unauthenticated
+401 responses from all three admin data endpoints, before handing the package to
+the publish job. The 0.1.5 documentation-only client patch changes no SDK runtime;
+its gate ensures the authenticated-access disclosure is already true when published. It sends no click data. This prevents automatic npm
 publication from racing the manual migration/Worker rollout. Readiness polling is
 bounded; if deployment takes longer, complete it and rerun Publish client. Do not
 bypass the gate. Future incompatible wire changes must raise the client readiness
