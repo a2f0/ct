@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { count, type Events, getData, time } from "./data";
+import { count, countryName, type Events, getData, time } from "./data";
 
 export function RecentClicks({
   initial,
@@ -98,7 +98,10 @@ export function RecentClicks({
       <div className="card-heading">
         <div>
           <h2>Latest activity</h2>
-          <p>Newest first. Times shown in UTC.</p>
+          <p>
+            Newest first · UTC. IP and approximate location are recorded at
+            delivery.
+          </p>
         </div>
         <span className="pill">UTC</span>
       </div>
@@ -108,6 +111,8 @@ export function RecentClicks({
             <tr>
               <th scope="col">Time</th>
               <th scope="col">Site</th>
+              <th scope="col">IP address</th>
+              <th scope="col">Location</th>
               <th scope="col">Page</th>
               <th scope="col">Target</th>
               <th scope="col">Label</th>
@@ -122,6 +127,32 @@ export function RecentClicks({
                   </time>
                 </td>
                 <td>{event.site}</td>
+                <td className="ip-address">{event.ip ?? "Unknown"}</td>
+                <td className="event-location">
+                  {event.location ? (
+                    <>
+                      <span>
+                        {[
+                          event.location.city,
+                          event.location.region ?? event.location.regionCode,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "Unknown city / region"}
+                      </span>
+                      <small>
+                        {countryName(event.location.country)}
+                        {event.location.continent
+                          ? ` · ${event.location.continent}`
+                          : ""}
+                      </small>
+                      {event.location.timezone && (
+                        <small>{event.location.timezone}</small>
+                      )}
+                    </>
+                  ) : (
+                    "Unknown"
+                  )}
+                </td>
                 <td className="path">{event.page}</td>
                 <td>
                   <span className="tag">{event.target}</span>

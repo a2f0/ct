@@ -3,6 +3,22 @@ export interface Summary {
   daily: { day: string; clicks: number }[];
   pages: { site: string; page: string; clicks: number }[];
   targets: { target: string; label: string | null; clicks: number }[];
+  geography: {
+    countries: { country: string | null; clicks: number }[];
+    regions: {
+      country: string | null;
+      region: string | null;
+      regionCode: string | null;
+      clicks: number;
+    }[];
+    cities: {
+      country: string | null;
+      region: string | null;
+      regionCode: string | null;
+      city: string | null;
+      clicks: number;
+    }[];
+  };
 }
 
 export interface ClickRow {
@@ -12,6 +28,15 @@ export interface ClickRow {
   page: string;
   target: string;
   label: string | null;
+  ip: string | null;
+  location: {
+    continent: string | null;
+    country: string | null;
+    region: string | null;
+    regionCode: string | null;
+    city: string | null;
+    timezone: string | null;
+  } | null;
 }
 export interface Events {
   events: ClickRow[];
@@ -36,6 +61,10 @@ export async function getData<T>(
 }
 
 export const count = new Intl.NumberFormat("en").format;
+const countries = new Intl.DisplayNames("en", { type: "region" });
+export function countryName(code: string | null | undefined) {
+  return code ? (countries.of(code) ?? code) : "Unknown country";
+}
 export const time = (timestamp: number) =>
   new Date(timestamp).toLocaleString("en", {
     dateStyle: "medium",

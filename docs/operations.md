@@ -42,6 +42,9 @@ A batch requiring correction and spanning more than 24 hours is rejected as
 inconsistent. Duplicate (site, id) pairs are ignored;
 accepted counts acknowledged events, including retries already stored.
 Rate limits allow approximately 120 batches/minute/IP per Cloudflare location.
+Inserts use up to ten clicks per statement (90 bindings), so a full 50-click
+batch plus its location uses six statements in a single atomic D1 batch. This
+stays below D1's 100-parameter limit and its free-plan query budget.
 
 The admin Worker exposes GET /api/sites, /api/summary and /api/events. Optional site,
 from and to filters apply to both data endpoints; dates are ISO timestamps, from
@@ -50,6 +53,22 @@ Events returns 100 rows in descending click-time order and an opaque nextCursor.
 Server receipt times are internal and are not returned. Pass cursor with the same
 filters for the next page. All endpoints are public and read-only. Responses are
 not cached. The UI displays UTC event dates and no unique-visitor metric.
+Each event includes ip (IPv4/IPv6 or null) and location (null or continent,
+country, region, regionCode, city, timezone). The Worker adds these from Cloudflare
+request metadata; no client upgrade is needed. Country values are two-letter
+codes and regions are country-specific. The summary's geography object includes
+the top 20 countries, regions, and cities by click count under the same site/date
+filters; missing metadata appears as an Unknown group. These are approximate
+network locations at delivery, not verified visitor locations.
+
+Migration 0003_ip_locations.sql adds nullable clicks.ip_address and location_id
+and a shared locations table. It preserves existing clicks. The location key
+deduplicates the full geographic tuple and the foreign key supports the admin's
+LEFT JOINs. clicks_location indexes references for retention cleanup. Migrations
+run before either Worker uploads; the old Worker remains compatible with the
+additive schema. The daily retention transaction deletes expired clicks and then
+unreferenced locations, including unused rows created by duplicate retries.
+
 Pagination is a live view, not a snapshot: delayed arrivals can land in a page
 already read. Refresh to include arrivals that precede the current cursor.
 
@@ -62,6 +81,11 @@ Retry; a repeated pagination cursor requires Refresh data. Changing filters or
 refreshing starts a new date window and discards pending requests and previously
 loaded pages. An overview refresh preserves its last successful report if the
 request fails.
+
+Dark Graphite is the default dashboard theme, using a2f0.net's charcoal palette.
+The top-bar switch selects light or dark and persists ct.theme in localStorage;
+the switch still works if storage is blocked. The external theme.js script
+restores the choice before styles load while honoring the existing script CSP.
 
 ## npm
 

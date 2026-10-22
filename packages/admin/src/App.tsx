@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { type Events, getData, type Summary } from "./data";
 import { Overview } from "./Overview";
 import { RecentClicks } from "./RecentClicks";
+import { ThemeSwitch } from "./ThemeSwitch";
 
 type Report = {
   from: number;
@@ -142,7 +143,10 @@ export function App() {
       <main>
         <header className="topbar">
           <span>WORKSPACE / ANALYTICS</span>
-          <span className="pill">90-day retention</span>
+          <div className="topbar-actions">
+            <span className="pill">90-day retention</span>
+            <ThemeSwitch />
+          </div>
         </header>
         <section className="heading">
           <div>

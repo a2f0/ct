@@ -1,5 +1,6 @@
 import { Chart } from "./Chart";
 import { count, type Summary } from "./data";
+import { Geography } from "./Geography";
 
 export function Overview({
   summary,
@@ -63,6 +64,7 @@ export function Overview({
           </p>
         )}
       </section>
+      <Geography geography={summary?.geography} loading={loading} />
       <div className="two-column">
         <section className="card">
           <div className="card-heading">

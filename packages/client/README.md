@@ -67,4 +67,12 @@ The queue is in memory. Clicks are dropped when it is full. Page hiding attempts
 a keepalive flush, but closing/crashing/offline navigation can lose unsent events.
 This is best-effort analytics, not an audit trail or billing source. No cookies,
 visitor IDs, local click history, text, hrefs, DOM IDs, classes, or form values
-are collected. page defaults to '/' so dynamic routes are never inferred.
+are collected by the SDK. page defaults to '/' so dynamic routes are never inferred.
+
+The default CT collector adds the full request IP and approximate country,
+state/region, city, continent, and timezone when a batch arrives. These fields
+are stored for up to 90 days and exposed on the currently public dashboard and
+data API. IPs can link activity; this is not anonymous analytics. Accepted
+batches receive this metadata even when overrideGpc is explicitly enabled.
+See the [collector data policy](https://github.com/a2f0/ct/blob/main/docs/privacy.md)
+when deciding what to disclose to your site's visitors.

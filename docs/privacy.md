@@ -5,8 +5,9 @@ public event field is visible there; consumers must pass stable, non-sensitive l
 and route templates. Authentication can be added later without changing ingestion.
 
 Each row contains the public site name, a random per-event UUID, the click time,
-normalized page name, element tag, and optional explicit
-data-ct label. There is no visitor or session identifier. The SDK never reads text,
+normalized page name, element tag, optional explicit data-ct label, request IP,
+and a reference to the shared location record described below. The SDK creates
+no separate visitor or session identifier. It never reads text,
 href, class, DOM ID, form values, query strings, fragments, or referrers. It sends
 no cookies. Route names are supplied by the consumer, with '/' as the default.
 Server receipt times are stored internally but excluded from the public API and
@@ -14,11 +15,33 @@ pagination cursors to avoid exposing ordinary delivery batches. When a device's
 clock is outside the accepted window, the batch is shifted so its newest click
 uses server time while preserving the spacing between its clicks.
 
-IP addresses are used transiently by Cloudflare's rate limiter and are not stored
-in D1. Worker request observability is disabled. Cloudflare still processes network
-requests as the hosting provider. No claims are made about visitors or unique users.
+The ingestion Worker stores the request IP address from Cloudflare's
+CF-Connecting-IP header (or the preserved IPv6 address in Pseudo IPv4 overwrite
+mode). It also reads Cloudflare's request.cf country, continent, state/region,
+region code, city, and timezone. These fields are public through the dashboard
+and data API, including full IP addresses. IPs can identify or link activity and
+must not be described as anonymous data. There is no separate visitor profile,
+session ID, browser geolocation prompt, or external geolocation service.
 
-Events older than 90 days are deleted daily. Cloudflare D1 recovery may retain
+These are the network address and approximate location at batch delivery, not
+necessarily at click time. VPNs, proxies, mobile networks, and shared addresses
+can change or obscure the location. An IP may be shared or change over time, so
+it is not a reliable unique-user identifier or a verified physical position.
+Missing metadata and historical rows stay null
+and appear as Unknown. No historical IPs or locations are inferred or backfilled.
+Coordinates, street addresses, postal codes, and raw user-agent strings are not
+collected. The client cannot supply IP/location fields in click payloads.
+
+Locations are deduplicated by their complete geographic tuple, not by IP, and
+joined to clicks. An IP can change location over time without rewriting old
+clicks. Duplicate event retries preserve the first successful receipt's IP and
+location. Worker request observability remains disabled. Cloudflare still
+processes network requests as the hosting provider. No unique-user count is
+derived from IP addresses.
+
+Events and their IP addresses older than 90 days are deleted daily; the same
+transaction removes locations no longer referenced by retained events.
+Cloudflare D1 recovery may retain
 previous data according to the account's Time Travel window. The client queue is
 bounded, in memory, and best-effort: it retries transient failures while the page
 is open, and attempts keepalive delivery when hidden. Closed/offline/crashed pages
@@ -30,7 +53,14 @@ The client respects the extension, site opt-out, DNT and GPC by default. A consu
 may pass overrideGpc: true to createTracker before init to ignore GPC for that
 tracker's capture and delivery. This option defaults to false and does not override
 the extension, site opt-out, DNT, storage errors, or automated-browser guards.
+Accepted batches receive the same server IP/location metadata even when the
+consumer has explicitly enabled the GPC override; ingestion has no separate
+Sec-GPC metadata suppression rule. With the default client configuration, GPC
+prevents the batch from being sent at all.
 Disabling clears the queue and aborts an in-flight request when possible.
 It cannot erase data already received. Synthetic clicks and webdriver browsers are
 excluded. init must still be called only by the consumer's production bootstrap,
 guarded by the exact origin.
+
+The admin stores only its dark/light theme preference in local browser storage
+(ct.theme). This preference is never sent with click events or used as an identifier.
