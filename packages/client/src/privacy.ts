@@ -48,8 +48,9 @@ export function clickTarget(
     (capture === "all" ? elements[0] : undefined);
   if (!target) return null;
   const label = target.getAttribute("data-ct");
+  const tag = target.tagName.toLowerCase();
   return {
-    target: target.tagName.toLowerCase().slice(0, 32),
+    target: /^[a-z][a-z0-9-]{0,31}$/.test(tag) ? tag : "unknown",
     label: label && /^[a-zA-Z0-9_.:-]{1,80}$/.test(label) ? label : null,
   };
 }

@@ -1,4 +1,4 @@
-export {};
+import { savePreference } from "./preferences";
 
 const toggle = document.querySelector<HTMLInputElement>("#disabled");
 const status = document.querySelector<HTMLElement>("#status");
@@ -22,32 +22,12 @@ async function update() {
   toggle.disabled = true;
   error.textContent = "";
   try {
-    if (disabled) {
-      await chrome.declarativeNetRequest.updateEnabledRulesets({
-        enableRulesetIds: ["ct-block"],
-        disableRulesetIds: [],
-      });
-      await chrome.storage.local.set({ disabled: true });
-    } else {
-      await chrome.storage.local.set({ disabled: false });
-      await chrome.declarativeNetRequest.updateEnabledRulesets({
-        enableRulesetIds: [],
-        disableRulesetIds: ["ct-block"],
-      });
-    }
+    await savePreference(chrome, disabled);
     render(disabled);
   } catch {
-    // Preserve privacy on partial failures; report that the preference may need a retry.
-    await chrome.storage.local.set({ disabled: true }).catch(() => undefined);
-    await chrome.declarativeNetRequest
-      .updateEnabledRulesets({
-        enableRulesetIds: ["ct-block"],
-        disableRulesetIds: [],
-      })
-      .catch(() => undefined);
     render(true);
     error.textContent =
-      "Could not change the preference. Tracking remains disabled; please try again.";
+      "Could not save the preference. Check extension permissions and try again.";
   } finally {
     toggle.disabled = false;
   }

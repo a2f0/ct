@@ -61,11 +61,12 @@ export function App() {
   async function loadMore() {
     if (!data?.events.nextCursor || paging) return;
     const snapshot = data;
+    const signal = active.current?.signal;
     setPaging(true);
     try {
       const next = await getData<Events>(
         `/api/events?${data.query}&cursor=${encodeURIComponent(data.events.nextCursor)}`,
-        active.current?.signal,
+        signal,
       );
       setData((current) =>
         current === snapshot
@@ -79,12 +80,12 @@ export function App() {
           : current,
       );
     } catch (cause) {
-      if (!active.current?.signal.aborted)
+      if (!signal?.aborted)
         setError(
           cause instanceof Error ? cause.message : "Unable to load more.",
         );
     } finally {
-      setPaging(false);
+      if (!signal?.aborted) setPaging(false);
     }
   }
 

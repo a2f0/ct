@@ -29,3 +29,7 @@ JavaScript. HTTP/HTTPS host access lets the signal work on current and future CT
 consumers. Restricted browser pages cannot run content scripts and do not use CT.
 Custom collector URLs receive the page opt-out signal but are not covered by the
 network rule. Already received requests cannot be recalled.
+
+Other page scripts can observe the opt-out marker. This is the tradeoff for
+signaling opt-out to present and future CT sites without reading page data.
+Background startup/update handlers reconcile network rules with the saved choice.

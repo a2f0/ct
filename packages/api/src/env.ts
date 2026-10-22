@@ -14,7 +14,7 @@ export interface AdminEnv {
 export function json(
   value: unknown,
   status = 200,
-  headers?: HeadersInit,
+  headers?: Record<string, string>,
 ): Response {
   return Response.json(value, {
     status,

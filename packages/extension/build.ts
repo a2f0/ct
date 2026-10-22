@@ -2,6 +2,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = import.meta.dir;
+const { version } = await Bun.file(resolve(root, "package.json")).json();
 await rm(resolve(root, "dist"), { recursive: true, force: true });
 const icons = Bun.spawnSync(
   ["bun", "run", "agent-tool", "images", "build", "extension"],
@@ -19,6 +20,7 @@ for (const browser of ["chrome", "firefox"]) {
     entrypoints: [
       resolve(root, "src/content.ts"),
       resolve(root, "src/popup.ts"),
+      resolve(root, "src/background.ts"),
     ],
     outdir: dir,
     target: "browser",
@@ -28,7 +30,11 @@ for (const browser of ["chrome", "firefox"]) {
   const manifest = {
     manifest_version: 3,
     name: "CT — Disable click tracking",
-    version: "0.1.0",
+    version,
+    background:
+      browser === "chrome"
+        ? { service_worker: "background.js" }
+        : { scripts: ["background.js"] },
     description:
       "Turn off CT click tracking in this browser. Enabled by default. No data is collected by the extension.",
     permissions: ["storage", "declarativeNetRequest"],

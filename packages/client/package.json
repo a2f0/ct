@@ -25,6 +25,6 @@
   },
   "scripts": {
     "build": "bun build src/index.ts --target browser --outdir dist && tsc -p tsconfig.build.json",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit && tsc -p tsconfig.test.json"
   }
 }

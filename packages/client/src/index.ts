@@ -4,10 +4,10 @@ import {
   OPT_OUT_KEY,
   optedOut,
   safePage,
-} from "./privacy";
-import type { ClickEvent, Tracker, TrackerOptions } from "./types";
+} from "./privacy.js";
+import type { ClickEvent, Tracker, TrackerOptions } from "./types.js";
 
-export type { ClickEvent, Tracker, TrackerOptions } from "./types";
+export type { ClickEvent, Tracker, TrackerOptions } from "./types.js";
 
 /** No browser globals, timers, listeners, or requests are touched until init(). */
 export function createTracker(options: TrackerOptions): Tracker {
@@ -22,8 +22,11 @@ export function createTracker(options: TrackerOptions): Tracker {
   let request: AbortController | undefined;
   let inFlight: Promise<void> | undefined;
   let failures = 0;
+  let generation = 0;
 
   function clear(): void {
+    generation++;
+    failures = 0;
     queue = [];
     if (timer) clearTimeout(timer);
     timer = undefined;
@@ -50,6 +53,7 @@ export function createTracker(options: TrackerOptions): Tracker {
   }
 
   async function send(): Promise<void> {
+    const currentGeneration = generation;
     const batch = queue.slice(0, batchSize);
     const controller = new AbortController();
     request = controller;
@@ -64,6 +68,7 @@ export function createTracker(options: TrackerOptions): Tracker {
         keepalive: true,
         signal: controller.signal,
       });
+      if (currentGeneration !== generation) return;
       if (
         response.ok ||
         (response.status >= 400 &&
@@ -76,7 +81,7 @@ export function createTracker(options: TrackerOptions): Tracker {
         failures = 0;
       } else failures++;
     } catch {
-      failures++;
+      if (currentGeneration === generation) failures++;
     } finally {
       clearTimeout(timeout);
       if (request === controller) request = undefined;
@@ -176,7 +181,8 @@ export function createTracker(options: TrackerOptions): Tracker {
       if (value) clear();
       if (typeof window === "undefined") return;
       try {
-        localStorage.setItem(OPT_OUT_KEY, value ? "1" : "0");
+        if (value) localStorage.setItem(OPT_OUT_KEY, "1");
+        else localStorage.removeItem(OPT_OUT_KEY);
       } catch {
         /* In-memory preference still applies. */
       }

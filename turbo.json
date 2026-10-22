@@ -14,5 +14,6 @@
       "persistent": true
     }
   },
-  "globalPassThroughEnv": ["GITHUB_OUTPUT"]
+  "globalPassThroughEnv": ["GITHUB_OUTPUT"],
+  "globalDependencies": ["tsconfig.json"]
 }

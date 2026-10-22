@@ -74,7 +74,7 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
       events.map((event) =>
         statement.bind(
           site,
-          event.id,
+          event.id.toLowerCase(),
           event.timestamp,
           now,
           event.page,

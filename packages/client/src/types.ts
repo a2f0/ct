@@ -20,7 +20,7 @@ export interface TrackerOptions {
 }
 
 export interface Tracker {
-  /** Attach listeners. Calling this again is harmless. Returns whether initialized. */
+  /** Attach listeners idempotently. Returns whether capture is currently allowed. */
   init(): boolean;
   /** Flush queued clicks. Network failures are retained and retried automatically. */
   flush(): Promise<void>;

@@ -62,7 +62,7 @@ if (preview) {
     ],
     cwd,
   );
-  await run(["bunx", "--bun", "--no-install", "wrangler", "deploy"], cwd);
+  await run(["bunx", "--no-install", "wrangler", "deploy"], cwd);
   await run(
     [
       "bunx",

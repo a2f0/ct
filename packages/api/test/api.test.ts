@@ -185,6 +185,38 @@ test("pagination has no gaps or repeats for tied timestamps across sites", async
   ).toBe(120);
 });
 
+test("uppercase UUID ingestion remains cursor-paginatable", async () => {
+  const events = Array.from({ length: 101 }, () => ({
+    ...event(),
+    id: crypto.randomUUID().toUpperCase(),
+  }));
+  for (let offset = 0; offset < events.length; offset += 50)
+    expect(
+      (
+        await ingest(
+          request({
+            site: "skyline",
+            events: events.slice(offset, offset + 50),
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(202);
+  const first = (await (
+    await admin(new Request("https://ct-admin.a2f0.net/api/events"), adminEnv())
+  ).json()) as { nextCursor: string };
+  expect(
+    (
+      await admin(
+        new Request(
+          `https://ct-admin.a2f0.net/api/events?cursor=${first.nextCursor}`,
+        ),
+        adminEnv(),
+      )
+    ).status,
+  ).toBe(200);
+});
+
 test("rejects invalid admin filters and cursors; assets have CSP", async () => {
   for (const query of [
     "site=unknown",

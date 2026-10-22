@@ -129,3 +129,35 @@ test("public dashboard loads data with filtering and a responsive read-only view
   });
   expect(errors).toEqual([]);
 });
+
+test("refreshing during pagination does not show a cancelled-request error", async ({
+  page,
+}) => {
+  let release: (() => void) | undefined;
+  let started: (() => void) | undefined;
+  const paused = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const requested = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  await page.route("**/api/events?**", async (route) => {
+    if (new URL(route.request().url()).searchParams.has("cursor")) {
+      started?.();
+      await paused;
+      await route
+        .fulfill({ json: { events: [], nextCursor: null } })
+        .catch(() => undefined);
+    } else
+      await route.fulfill({ json: { events: [], nextCursor: "next-page" } });
+  });
+  await page.goto("http://127.0.0.1:4176");
+  await page.getByRole("button", { name: "Load 100 more" }).click();
+  await requested;
+  await page.getByRole("button", { name: "Refresh data" }).click();
+  release?.();
+  await expect(
+    page.getByRole("button", { name: "Refresh data" }),
+  ).toBeEnabled();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});

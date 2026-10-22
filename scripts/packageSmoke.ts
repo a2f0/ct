@@ -36,27 +36,33 @@ try {
   await mkdir(resolve(scratch, "node_modules/@a2f0"), { recursive: true });
   await Bun.$`ln -s ${pkg} ${resolve(scratch, "node_modules/@a2f0/ct-client")}`.quiet();
   await Bun.write(
-    resolve(scratch, "consumer.ts"),
-    'import { createTracker, type Tracker } from "@a2f0/ct-client"; const ct: Tracker = createTracker({site:"smoke", capture:"all", page:()=>"/"}); ct.init(); void ct.flush(); ct.setOptOut(true); ct.destroy();\n',
+    resolve(scratch, "consumer.mts"),
+    'import { createTracker, type Tracker } from "@a2f0/ct-client"; const ct: Tracker = createTracker({site:"smoke", capture:"all", page:()=>"/"}); ct.init(); void ct.flush(); ct.setOptOut(true); ct.destroy();\n// @ts-expect-error site must remain typed as string\ncreateTracker({site:123});\n',
   );
-  const types = Bun.spawnSync(
-    [
-      resolve(root, "node_modules/.bin/tsc"),
-      "--noEmit",
-      "--strict",
-      "--skipLibCheck",
-      "--target",
-      "ES2022",
-      "--module",
-      "ESNext",
-      "--moduleResolution",
-      "Bundler",
-      resolve(scratch, "consumer.ts"),
-    ],
-    { cwd: scratch, stdout: "inherit", stderr: "inherit" },
-  );
-  if (types.exitCode !== 0)
-    throw new Error("Published declarations cannot be consumed");
+  for (const [module, resolution] of [
+    ["ESNext", "Bundler"],
+    ["NodeNext", "NodeNext"],
+  ]) {
+    const types = Bun.spawnSync(
+      [
+        resolve(root, "node_modules/.bin/tsc"),
+        "--noEmit",
+        "--strict",
+        "--target",
+        "ES2022",
+        "--module",
+        module ?? "ESNext",
+        "--moduleResolution",
+        resolution ?? "Bundler",
+        resolve(scratch, "consumer.mts"),
+      ],
+      { cwd: scratch, stdout: "inherit", stderr: "inherit" },
+    );
+    if (types.exitCode !== 0)
+      throw new Error(
+        `Published declarations cannot be consumed with ${resolution}`,
+      );
+  }
   console.log(
     `Package smoke passed: ${tarball}; SSR import, browser bundle, and standalone TypeScript consumer.`,
   );

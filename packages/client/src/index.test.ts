@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { Window } from "happy-dom";
+import { validClick } from "../../api/src/validation";
 import { createTracker } from "./index";
 import type { Tracker } from "./types";
 
@@ -121,6 +122,17 @@ describe("explicit lifecycle", () => {
 });
 
 describe("click metadata", () => {
+  test("unusual tags cannot poison a batch and emitted fields match the API", async () => {
+    const ct = tracker();
+    ct.init();
+    for (const tag of ["foo_bar", "my.widget", "svg", "my-element"])
+      click(`<${tag} data-ct="valid-label">private</${tag}>`);
+    await ct.flush();
+    expect(requests[0]?.body.events).toHaveLength(4);
+    expect(
+      requests[0]?.body.events.every((event) => validClick(event, Date.now())),
+    ).toBe(true);
+  });
   test("captures all target types but no text, attributes or URLs", async () => {
     const ct = tracker({
       site: "skyline",
@@ -186,6 +198,46 @@ describe("click metadata", () => {
 });
 
 describe("queue and privacy", () => {
+  test.each([408, 429, 500, 503])(
+    "retries status %i without changing event IDs",
+    async (status) => {
+      const ct = tracker();
+      ct.init();
+      click();
+      let attempt = 0;
+      globalThis.fetch = mock(async (_url, init) => {
+        requests.push({
+          body: JSON.parse(String(init?.body)),
+          init: init ?? {},
+        });
+        return new Response(null, { status: ++attempt === 1 ? status : 202 });
+      }) as unknown as typeof fetch;
+      await ct.flush();
+      await ct.flush();
+      expect(requests[0]?.body).toEqual(requests[1]?.body);
+    },
+  );
+  test("opting out during a request does not throttle a later opt-in", async () => {
+    const ct = tracker({ site: "skyline", capture: "all", batchSize: 1 });
+    ct.init();
+    let calls = 0;
+    globalThis.fetch = mock(async (_url, init) => {
+      if (++calls > 1) return new Response(null, { status: 202 });
+      return new Promise<Response>((_resolve, reject) =>
+        init?.signal?.addEventListener("abort", () =>
+          reject(new Error("aborted")),
+        ),
+      );
+    }) as unknown as typeof fetch;
+    click();
+    const pending = ct.flush();
+    ct.setOptOut(true);
+    await pending;
+    ct.setOptOut(false);
+    click();
+    expect(calls).toBe(2);
+    await ct.flush();
+  });
   test("retries the same event IDs after failure; successes empty the queue", async () => {
     const ct = tracker();
     ct.init();
