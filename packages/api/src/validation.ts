@@ -29,11 +29,18 @@ export function validClick(value: unknown): value is Click {
   );
 }
 
-/** Preserve reasonable click times; device clock skew must not discard a batch. */
-export function eventTime(timestamp: number, now: number): number {
-  return timestamp < now - 86_400_000 || timestamp > now + 300_000
-    ? now
-    : timestamp;
+/** Correct clock skew with one offset so clicks retain their relative timing. */
+export function normalizeTimes(events: Click[], now: number): Click[] | null {
+  const newest = Math.max(...events.map((event) => event.timestamp));
+  const oldest = Math.min(...events.map((event) => event.timestamp));
+  if (oldest >= now - 86_400_000 && newest <= now + 300_000) return events;
+  // Inconsistent clocks cannot be shifted into the accepted one-day window.
+  if (newest - oldest > 86_400_000) return null;
+  const offset = now - newest;
+  return events.map((event) => ({
+    ...event,
+    timestamp: event.timestamp + offset,
+  }));
 }
 
 export async function readBody(

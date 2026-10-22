@@ -92,19 +92,46 @@ test("validates every event before any write and rejects extra metadata", async 
   ).toEqual({ count: 0 });
 });
 
-test("keeps delayed click times and replaces unreasonable device clocks", async () => {
+test("keeps delayed click times and corrects skew without collapsing batch timing", async () => {
   const now = Date.now();
-  const timestamps = [now - 60_000, now - 2 * 86_400_000, now + 600_000];
-  const batch = timestamps.map((timestamp) => ({ ...event(), timestamp }));
+  for (const skew of [0, -2 * 86_400_000, 600_000]) {
+    const batch = [60_000, 10_000, 0].map((delay) => ({
+      ...event(),
+      timestamp: now + skew - delay,
+    }));
+    expect(
+      (await ingest(request({ site: "skyline", events: batch }), env)).status,
+    ).toBe(202);
+    const stored = batch.map(
+      (click) =>
+        storage.sqlite
+          .query("SELECT timestamp, received_at FROM clicks WHERE id = ?")
+          .get(click.id) as { timestamp: number; received_at: number },
+    );
+    expect(
+      stored.map((row) => row.timestamp - (stored[2]?.timestamp ?? 0)),
+    ).toEqual([-60_000, -10_000, 0]);
+    expect(new Set(stored.map((row) => row.timestamp)).size).toBe(3);
+    for (const [index, row] of stored.entries()) {
+      const delay = [60_000, 10_000, 0][index] ?? 0;
+      expect(row.timestamp).toBe(
+        skew === 0 ? now - delay : row.received_at - delay,
+      );
+    }
+  }
+});
+
+test("inconsistent clocks spanning more than a day reject the batch atomically", async () => {
+  const batch = [
+    event(),
+    { ...event(), timestamp: Date.now() - 2 * 86_400_000 },
+  ];
   expect(
     (await ingest(request({ site: "skyline", events: batch }), env)).status,
-  ).toBe(202);
-  for (const [index, click] of batch.entries()) {
-    const row = storage.sqlite
-      .query("SELECT timestamp, received_at FROM clicks WHERE id = ?")
-      .get(click.id) as { timestamp: number; received_at: number };
-    expect(row.timestamp).toBe(index === 0 ? click.timestamp : row.received_at);
-  }
+  ).toBe(400);
+  expect(
+    storage.sqlite.query("SELECT COUNT(*) AS count FROM clicks").get(),
+  ).toEqual({ count: 0 });
 });
 
 test("accepts case-insensitive media types and rejects invalid configured site names", async () => {

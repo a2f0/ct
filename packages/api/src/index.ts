@@ -1,5 +1,5 @@
 import { DAY, type Env, json, RETENTION_DAYS } from "./env";
-import { eventTime, readBody, validClick } from "./validation";
+import { normalizeTimes, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
@@ -71,16 +71,19 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
     !events.every((event) => validClick(event))
   )
     return json({ error: "Invalid events" }, 400, cors);
+  const normalized = normalizeTimes(events, now);
+  if (!normalized)
+    return json({ error: "Inconsistent event timestamps" }, 400, cors);
   const statement = env.DB.prepare(
     "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(site, id) DO NOTHING",
   );
   try {
     await env.DB.batch(
-      events.map((event) =>
+      normalized.map((event) =>
         statement.bind(
           site,
           event.id.toLowerCase(),
-          eventTime(event.timestamp, now),
+          event.timestamp,
           now,
           event.page,
           event.target,

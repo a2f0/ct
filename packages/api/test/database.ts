@@ -3,12 +3,12 @@ import { Database } from "bun:sqlite";
 /** Run production SQL against SQLite, including D1 batch transaction semantics. */
 export async function database() {
   const sqlite = new Database(":memory:");
-  const directory = new URL("../migrations/", import.meta.url).pathname;
+  const directory = `${import.meta.dir}/../migrations`;
   const migrations = Array.from(
     new Bun.Glob("*.sql").scanSync(directory),
   ).sort();
   for (const migration of migrations)
-    sqlite.exec(await Bun.file(`${directory}${migration}`).text());
+    sqlite.exec(await Bun.file(`${directory}/${migration}`).text());
   class Statement {
     constructor(
       readonly sql: string,

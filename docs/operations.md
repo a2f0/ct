@@ -31,9 +31,11 @@ both configs. Public site identifiers are not credentials.
 
 POST https://ct.a2f0.net/v1/clicks accepts text/plain JSON or application/json with
 an exact allowed Origin and {site, events}. It accepts 1–50 validated events, up to
-32 KiB, and returns 202 only after D1 commits. Positive integer timestamps older
-than 24 hours or more than five minutes ahead are replaced with server time, so
-device clock skew does not discard clicks. Duplicate (site, id) pairs are ignored;
+32 KiB, and returns 202 only after D1 commits. If a positive integer timestamp is
+older than 24 hours or more than five minutes ahead, the entire batch is shifted
+so its newest click equals server time, preserving the intervals between clicks.
+A batch requiring correction and spanning more than 24 hours is rejected as
+inconsistent. Duplicate (site, id) pairs are ignored;
 accepted counts acknowledged events, including retries already stored.
 Rate limits allow approximately 120 batches/minute/IP per Cloudflare location.
 
@@ -44,6 +46,8 @@ Events returns 100 rows in descending click-time order and an opaque nextCursor.
 Server receipt times are internal and are not returned. Pass cursor with the same
 filters for the next page. All endpoints are public and read-only. Responses are
 not cached. The UI displays UTC event dates and no unique-visitor metric.
+Pagination is a live view, not a snapshot: delayed arrivals can land in a page
+already read. Refresh to include arrivals that precede the current cursor.
 
 ## npm
 

@@ -11,7 +11,8 @@ href, class, DOM ID, form values, query strings, fragments, or referrers. It sen
 no cookies. Route names are supplied by the consumer, with '/' as the default.
 Server receipt times are stored internally but excluded from the public API and
 pagination cursors to avoid exposing ordinary delivery batches. When a device's
-clock is outside the accepted window, its click time falls back to server time.
+clock is outside the accepted window, the batch is shifted so its newest click
+uses server time while preserving the spacing between its clicks.
 
 IP addresses are used transiently by Cloudflare's rate limiter and are not stored
 in D1. Worker request observability is disabled. Cloudflare still processes network
