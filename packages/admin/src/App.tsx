@@ -269,7 +269,10 @@ export function App() {
             </div>
             <div className="rankings">
               {data?.summary.targets.map((target) => (
-                <div className="rank" key={`${target.target}:${target.label}`}>
+                <div
+                  className="rank"
+                  key={JSON.stringify([target.target, target.label])}
+                >
                   <span className="target-icon">↖</span>
                   <div>
                     <strong>{target.label ?? target.target}</strong>

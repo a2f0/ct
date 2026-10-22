@@ -16,7 +16,8 @@ bun run deploy         # same prerequisites, remote migrations, then both Worker
 ```
 
 Before a new account's first deployment, run wrangler d1 create ct and replace both
-database_id values. The deploy script rejects placeholder or differing IDs. The
+database_id values. The deploy script rejects placeholder or differing IDs, invalid
+site names/origins, and site registries that differ between the two Workers. The
 custom-domain deployment creates the corresponding DNS routing after the Workers
 are uploaded. Do not reuse another application's database. The scheduled ingestion
 Worker deletes events older than 90 days at 03:17 UTC daily.
@@ -30,16 +31,23 @@ both configs. Public site identifiers are not credentials.
 
 POST https://ct.a2f0.net/v1/clicks accepts text/plain JSON or application/json with
 an exact allowed Origin and {site, events}. It accepts 1–50 validated events, up to
-32 KiB, and returns 202 only after D1 commits. Events older than 24 hours or more
-than five minutes in the future are rejected. Duplicate (site, id) pairs are ignored.
+32 KiB, and returns 202 only after D1 commits. If a positive integer timestamp is
+older than 24 hours or more than five minutes ahead, the entire batch is shifted
+so its newest click equals server time, preserving the intervals between clicks.
+A batch requiring correction and spanning more than 24 hours is rejected as
+inconsistent. Duplicate (site, id) pairs are ignored;
+accepted counts acknowledged events, including retries already stored.
 Rate limits allow approximately 120 batches/minute/IP per Cloudflare location.
 
 The admin Worker exposes GET /api/sites, /api/summary and /api/events. Optional site,
 from and to filters apply to both data endpoints; dates are ISO timestamps, from
 inclusive and to exclusive. Ranges are capped at 90 days plus the end-day boundary.
-Events returns 100 rows and an opaque nextCursor. Pass it as cursor with the same
+Events returns 100 rows in descending click-time order and an opaque nextCursor.
+Server receipt times are internal and are not returned. Pass cursor with the same
 filters for the next page. All endpoints are public and read-only. Responses are
 not cached. The UI displays UTC event dates and no unique-visitor metric.
+Pagination is a live view, not a snapshot: delayed arrivals can land in a page
+already read. Refresh to include arrivals that precede the current cursor.
 
 ## npm
 

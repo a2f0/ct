@@ -1,14 +1,18 @@
 # Click data
 
 The initial dashboard and data API are public and read-only by request. Every
-stored field is visible there; consumers must pass stable, non-sensitive labels
+public event field is visible there; consumers must pass stable, non-sensitive labels
 and route templates. Authentication can be added later without changing ingestion.
 
 Each row contains the public site name, a random per-event UUID, the click time,
-server receipt time, normalized page name, element tag, and optional explicit
+normalized page name, element tag, and optional explicit
 data-ct label. There is no visitor or session identifier. The SDK never reads text,
 href, class, DOM ID, form values, query strings, fragments, or referrers. It sends
 no cookies. Route names are supplied by the consumer, with '/' as the default.
+Server receipt times are stored internally but excluded from the public API and
+pagination cursors to avoid exposing ordinary delivery batches. When a device's
+clock is outside the accepted window, the batch is shifted so its newest click
+uses server time while preserving the spacing between its clicks.
 
 IP addresses are used transiently by Cloudflare's rate limiter and are not stored
 in D1. Worker request observability is disabled. Cloudflare still processes network

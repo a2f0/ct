@@ -68,19 +68,18 @@ export async function recent(
   if (cursor) {
     const match = /^(\d{13})_([0-9a-f-]{36})_([a-z0-9-]{1,64})$/.exec(cursor);
     if (!match) throw new Error("Invalid cursor");
-    after = " AND (received_at, id, site) < (?, ?, ?)";
+    after = " AND (timestamp, id, site) < (?, ?, ?)";
     values.push(Number(match[1]), match[2] ?? "", match[3] ?? "");
   }
   const result = await db
     .prepare(
-      `SELECT site, id, timestamp, received_at, page, target, label FROM clicks WHERE ${sql}${after} ORDER BY received_at DESC, id DESC, site DESC LIMIT 101`,
+      `SELECT site, id, timestamp, page, target, label FROM clicks WHERE ${sql}${after} ORDER BY timestamp DESC, id DESC, site DESC LIMIT 101`,
     )
     .bind(...values)
     .all<{
       site: string;
       id: string;
       timestamp: number;
-      received_at: number;
       page: string;
       target: string;
       label: string | null;
@@ -91,7 +90,7 @@ export async function recent(
     events,
     nextCursor:
       result.results.length > 100 && last
-        ? `${last.received_at}_${last.id}_${last.site}`
+        ? `${last.timestamp}_${last.id}_${last.site}`
         : null,
   };
 }

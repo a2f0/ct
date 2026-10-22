@@ -1,5 +1,5 @@
 import { DAY, type Env, json, RETENTION_DAYS } from "./env";
-import { readBody, validClick } from "./validation";
+import { normalizeTimes, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
@@ -29,7 +29,11 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
     });
   if (
     !["application/json", "text/plain"].includes(
-      request.headers.get("Content-Type")?.split(";")[0]?.trim() ?? "",
+      request.headers
+        .get("Content-Type")
+        ?.split(";")[0]
+        ?.trim()
+        .toLowerCase() ?? "",
     )
   )
     return json({ error: "Unsupported content type" }, 415, cors);
@@ -54,6 +58,7 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
   const { site, events } = body as Record<string, unknown>;
   if (
     typeof site !== "string" ||
+    !/^[a-z0-9][a-z0-9-]{0,63}$/.test(site) ||
     !Object.hasOwn(env.SITES, site) ||
     !env.SITES[site]?.includes(origin)
   )
@@ -63,15 +68,18 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
     !Array.isArray(events) ||
     events.length < 1 ||
     events.length > 50 ||
-    !events.every((event) => validClick(event, now))
+    !events.every((event) => validClick(event))
   )
     return json({ error: "Invalid events" }, 400, cors);
+  const normalized = normalizeTimes(events, now);
+  if (!normalized)
+    return json({ error: "Inconsistent event timestamps" }, 400, cors);
   const statement = env.DB.prepare(
     "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(site, id) DO NOTHING",
   );
   try {
     await env.DB.batch(
-      events.map((event) =>
+      normalized.map((event) =>
         statement.bind(
           site,
           event.id.toLowerCase(),

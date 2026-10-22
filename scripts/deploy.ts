@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { canonicalSites } from "./sites";
 
 const root = resolve(import.meta.dir, "..");
 const preview = process.argv.includes("--dry-run");
@@ -15,6 +16,8 @@ if (
   throw new Error(
     "Configure the same provisioned D1 database in both Wrangler files first.",
   );
+if (canonicalSites(api.vars?.SITES) !== canonicalSites(admin.vars?.SITES))
+  throw new Error("Both Workers must register the same sites and origins.");
 
 async function run(args: string[], cwd = root) {
   const child = Bun.spawn(args, {
