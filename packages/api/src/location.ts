@@ -40,7 +40,7 @@ export function requestLocation(request: Request) {
   // Pseudo IPv4's overwrite mode retains the real address in this header.
   if (ip && !ip.includes(":") && Number(ip.split(".")[0]) >= 240) {
     const ipv6 = normalizeIp(request.headers.get("CF-Connecting-IPv6"));
-    if (ipv6?.includes(":")) ip = ipv6;
+    ip = ipv6?.includes(":") ? ipv6 : null;
   }
   const cf = request.cf;
   const country = text(cf?.country, 2)?.toUpperCase();

@@ -172,6 +172,12 @@ test("normalizes network metadata and handles unknown countries and pseudo IPv4"
     values: [null, null, null, null, null, null],
     key: null,
   });
+  pseudo.headers.delete("CF-Connecting-IPv6");
+  expect(requestLocation(pseudo).ip).toBeNull();
+  for (const invalid of ["2001:::1", "203.0.113.8"]) {
+    pseudo.headers.set("CF-Connecting-IPv6", invalid);
+    expect(requestLocation(pseudo).ip).toBeNull();
+  }
   const tor = request([click()], { country: "T1" });
   expect(requestLocation(tor).key).toBeNull();
   const normal = request();

@@ -83,7 +83,7 @@ export async function recent(
   }
   const result = await db
     .prepare(
-      `SELECT clicks.site, clicks.id, timestamp, page, target, label, ip_address AS ip, locations.id AS locationId, continent, country, region, region_code AS regionCode, city, timezone FROM clicks LEFT JOIN locations ON clicks.location_id = locations.id WHERE ${sql}${after} ORDER BY timestamp DESC, clicks.id DESC, site DESC LIMIT 101`,
+      `SELECT clicks.site AS site, clicks.id AS id, timestamp, page, target, label, ip_address AS ip, locations.id AS locationId, continent, country, region, region_code AS regionCode, city, timezone FROM clicks LEFT JOIN locations ON clicks.location_id = locations.id WHERE ${sql}${after} ORDER BY timestamp DESC, clicks.id DESC, site DESC LIMIT 101`,
     )
     .bind(...values)
     .all<

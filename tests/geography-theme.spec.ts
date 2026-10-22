@@ -101,6 +101,11 @@ test("recent clicks show IP/location and overview slices countries, regions and 
     path: `test-results/overview-geo-dark-${test.info().project.name}.png`,
     fullPage: true,
   });
+  await page.setViewportSize({ width: 800, height: 1024 });
+  await page.screenshot({
+    path: `test-results/overview-geo-tablet-${test.info().project.name}.png`,
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(

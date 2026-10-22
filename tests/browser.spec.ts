@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { expect, test } from "@playwright/test";
 import type { Tracker } from "../packages/client/src/types";
 
@@ -41,6 +42,13 @@ test("a full 50-click delivery round-trips through the real Worker and migrated 
         Object.hasOwn(event, "ip") && Object.hasOwn(event, "location"),
     ),
   ).toBe(true);
+  for (const event of stored) {
+    expect(event.ip).not.toBeNull();
+    expect(isIP(event.ip)).toBeGreaterThan(0);
+    if (isIP(event.ip) === 6) {
+      expect(new URL(`http://[${event.ip}]/`).hostname).toBe(`[${event.ip}]`);
+    }
+  }
 });
 
 test("inert before init and blocked in automated browsers", async ({
