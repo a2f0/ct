@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "types": ["chrome", "bun"] },
+  "include": ["src/**/*.ts", "build.ts"]
+}

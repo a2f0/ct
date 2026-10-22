@@ -1,0 +1,12 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/agent-tool.json",
+        "$TURBO_ROOT$/assets/brand/**"
+      ]
+    }
+  }
+}

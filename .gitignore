@@ -1,0 +1,14 @@
+node_modules
+dist
+.turbo
+.wrangler
+.secrets
+.env
+.env.local
+.dev.vars
+coverage
+playwright-report
+test-results
+*.tgz
+*.zip
+wrangler.generated.json

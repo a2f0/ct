@@ -1,0 +1,21 @@
+{
+  "name": "ct-api-test",
+  "main": "../packages/api/src/index.ts",
+  "compatibility_date": "2026-10-16",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ct-test",
+      "database_id": "11111111-1111-4111-8111-111111111111",
+      "migrations_dir": "../packages/api/migrations"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "INGEST_LIMITER",
+      "namespace_id": "782003",
+      "simple": { "limit": 1000, "period": 60 }
+    }
+  ],
+  "vars": { "SITES": { "skyline": ["http://127.0.0.1:4174"] } }
+}

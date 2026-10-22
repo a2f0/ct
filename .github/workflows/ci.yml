@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          version: 2026.10.17
+          install_args: bun node
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run test
+      - run: bun run build
+      - run: bun run package:smoke
+      - run: bun run test:extension
+      - run: bunx --no-install playwright install --with-deps chromium firefox
+      - run: bun run test:browser

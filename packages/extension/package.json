@@ -1,0 +1,16 @@
+{
+  "name": "@ct/extension",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "bun build.ts",
+    "check": "tsc --noEmit",
+    "lint:package": "web-ext lint --source-dir dist/firefox --warnings-as-errors"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.3.6",
+    "web-ext": "10.8.0"
+  }
+}
