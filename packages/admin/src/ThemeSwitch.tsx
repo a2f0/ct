@@ -9,7 +9,7 @@ export function ThemeSwitch() {
     <button
       className="theme-switch"
       type="button"
-      aria-label={`Switch to ${next} theme`}
+      aria-label={`Switch to ${next} mode`}
       onClick={() => {
         document.documentElement.dataset.theme = next;
         setTheme(next);

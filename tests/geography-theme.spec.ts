@@ -131,7 +131,7 @@ test("Graphite defaults to dark and the keyboard theme switch persists through r
     "background-color",
     "rgb(22, 22, 22)",
   );
-  await page.getByRole("button", { name: "Switch to light theme" }).focus();
+  await page.getByRole("button", { name: "Switch to light mode" }).focus();
   await page.keyboard.press("Enter");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(page.locator("body")).toHaveCSS(
@@ -149,10 +149,10 @@ test("Graphite defaults to dark and the keyboard theme switch persists through r
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "Switch to dark theme" }),
+    page.getByRole("button", { name: "Switch to dark mode" }),
   ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "Switch to dark theme" }).click();
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(
     await page.evaluate(
@@ -181,7 +181,7 @@ test("theme controls work when storage is blocked", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(admin);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await page.getByRole("button", { name: "Switch to light mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

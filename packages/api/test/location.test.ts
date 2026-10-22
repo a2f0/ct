@@ -179,6 +179,17 @@ test("normalizes network metadata and handles unknown countries and pseudo IPv4"
   expect(requestLocation(normal).ip).toBe("203.0.113.8");
 });
 
+test("accepted batches with Sec-GPC retain request metadata", async () => {
+  // The SDK's explicit override controls delivery; ingestion does not silently
+  // change the event schema or metadata policy based on a browser header.
+  const batch = request();
+  batch.headers.set("Sec-GPC", "1");
+  expect((await ingest(batch, env)).status).toBe(202);
+  const data = await recent(env.DB, filters(), null);
+  expect(data.events[0]?.ip).toBe("203.0.113.8");
+  expect(data.events[0]?.location).toEqual(texas);
+});
+
 test("geographic counts distinguish same-named cities and follow site/date filters", async () => {
   const geos = [
     texas,
