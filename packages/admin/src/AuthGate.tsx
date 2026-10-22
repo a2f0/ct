@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { App } from "./App";
 import { authClient, returnTo } from "./authClient";
 import { SignOut } from "./SignOut";
@@ -24,7 +24,10 @@ export function AuthGate() {
     if (session && !expired && location.pathname === "/login")
       location.replace(returnTo());
   }, [session, expired]);
-  if (isPending)
+  if (
+    isPending ||
+    (session && !expired && !error && location.pathname === "/login")
+  )
     return (
       <div className="auth-shell" role="status">
         Checking your session…
@@ -34,7 +37,7 @@ export function AuthGate() {
     return <Login expired={expired} unavailable={Boolean(error)} />;
   return location.pathname === "/account" ? <Account /> : <App />;
 }
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({ children }: { children: ReactNode }) {
   return (
     <main className="auth-shell">
       <header className="auth-header">
@@ -68,7 +71,9 @@ function Login({
         setError(
           result.error.status === 429
             ? "Too many attempts. Please wait a minute."
-            : "Sign-in failed. Check your email and password.",
+            : result.error.status >= 500
+              ? "Sign-in is temporarily unavailable. Please try again."
+              : "Sign-in failed. Check your email and password.",
         );
         setPassword("");
         return;

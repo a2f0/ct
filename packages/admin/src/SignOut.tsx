@@ -21,7 +21,7 @@ export function SignOut() {
     <>
       <button
         type="button"
-        className="theme-switch"
+        className="session-action"
         disabled={busy}
         onClick={() => void logout()}
       >

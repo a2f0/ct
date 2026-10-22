@@ -8,7 +8,6 @@ export async function admin(
   env: AdminEnv,
 ): Promise<Response> {
   const url = new URL(request.url);
-  const origin = new URL(env.BETTER_AUTH_URL).origin;
   if (url.pathname.startsWith("/api/auth/")) {
     const method = new Map([
       ["/api/auth/sign-in/email", "POST"],
@@ -20,6 +19,12 @@ export async function admin(
     if (request.method !== method)
       return json({ error: "Method not allowed" }, 405, { Allow: method });
     if (method === "POST") {
+      let origin: string;
+      try {
+        origin = new URL(env.BETTER_AUTH_URL).origin;
+      } catch {
+        return json({ error: "Authentication temporarily unavailable" }, 503);
+      }
       if (request.headers.get("Origin") !== origin)
         return json({ error: "Origin not allowed" }, 403);
       if (

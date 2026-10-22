@@ -3,7 +3,8 @@ import { getMigrations } from "better-auth/db/migration";
 import { provisionAccount } from "../src/accounts";
 import { admin } from "../src/admin";
 import { createAuth } from "../src/auth";
-import type { AdminEnv } from "../src/env";
+import type { AdminEnv, Env } from "../src/env";
+import collector from "../src/index";
 import { TEST_ACCOUNT, TEST_AUTH } from "./authHelpers";
 import { database } from "./database";
 
@@ -122,6 +123,14 @@ test("missing signing secret fails closed without disclosing private data", asyn
   }
   expect((await call("/login")).status).toBe(200);
 });
+test("invalid auth origin fails closed while public login and downloads remain available", async () => {
+  env.BETTER_AUTH_URL = "://invalid";
+  for (const path of ["/recent", "/api/sites", "/api/auth/get-session"])
+    expect((await call(path)).status).toBe(503);
+  expect((await login()).status).toBe(503);
+  for (const path of ["/login", "/downloads/ct-chrome.zip"])
+    expect((await call(path)).status).toBe(200);
+});
 test("signup is disabled in routing and in the auth library; mutation origins and media types are enforced", async () => {
   expect(
     (
@@ -142,6 +151,27 @@ test("signup is disabled in routing and in the auth library; mutation origins an
     }),
   );
   expect(direct.status).toBe(400);
+  for (const path of [
+    "/api/auth/sign-in/email",
+    "/api/auth/sign-out",
+    "/api/auth/change-password",
+  ])
+    expect((await call(path)).status).toBe(405);
+  expect(
+    (await call("/api/auth/get-session", { method: "POST", body: {} })).status,
+  ).toBe(405);
+  const wrongMedia = await admin(
+    new Request(`${TEST_AUTH.BETTER_AUTH_URL}/api/auth/sign-in/email`, {
+      method: "POST",
+      headers: {
+        Origin: TEST_AUTH.BETTER_AUTH_URL,
+        "Content-Type": "text/plain",
+      },
+      body: JSON.stringify(TEST_ACCOUNT),
+    }),
+    env,
+  );
+  expect(wrongMedia.status).toBe(415);
   for (const origin of ["https://evil.example", ""])
     expect(
       (
@@ -242,4 +272,63 @@ test("login rate limiting is persistent and account creation is atomic", async (
   expect(
     storage.sqlite.query("SELECT COUNT(*) AS n FROM auth_user").get(),
   ).toEqual({ n: 0 });
+});
+
+test("CLI reset refuses an account without a credential", async () => {
+  await provisionAccount(env.DB, { action: "create", ...TEST_ACCOUNT });
+  storage.sqlite.exec("DELETE FROM auth_account");
+  await expect(
+    provisionAccount(env.DB, { action: "reset", ...TEST_ACCOUNT }),
+  ).rejects.toThrow("Credential account is missing");
+});
+
+test("daily cleanup bounds anonymous auth IP retention and removes only expired auth records", async () => {
+  await provisionAccount(env.DB, { action: "create", ...TEST_ACCOUNT });
+  const first = cookieOf(await login());
+  const now = Date.now();
+  const old = new Date(now - 86_400_000).toISOString();
+  const future = new Date(now + 86_400_000).toISOString();
+  storage.sqlite.query("UPDATE auth_session SET expiresAt = ?").run(old);
+  const current = cookieOf(await login());
+  for (const [id, expiresAt] of [
+    ["expired", old],
+    ["active", future],
+  ] as const)
+    storage.sqlite
+      .query(
+        "INSERT INTO auth_verification (id, identifier, value, expiresAt, createdAt, updatedAt) VALUES (?, ?, 'fixture', ?, ?, ?)",
+      )
+      .run(id, id, expiresAt, old, old);
+  storage.sqlite
+    .query(
+      "INSERT INTO auth_rate_limit (id,key,count,lastRequest) VALUES ('expired-ip','203.0.113.99/sign-in/email',1,?)",
+    )
+    .run(now - 2 * 86_400_000);
+  storage.sqlite
+    .query(
+      "INSERT INTO auth_rate_limit (id,key,count,lastRequest) VALUES ('active-ip','203.0.113.100/sign-in/email',1,?)",
+    )
+    .run(now - 1000);
+  await collector.scheduled({} as ScheduledController, { DB: env.DB } as Env);
+  expect((await call("/api/sites", { cookie: first })).status).toBe(401);
+  expect((await call("/api/sites", { cookie: current })).status).toBe(200);
+  expect(
+    storage.sqlite.query("SELECT id FROM auth_verification").all(),
+  ).toEqual([{ id: "active" }]);
+  expect(
+    storage.sqlite
+      .query(
+        "SELECT id FROM auth_rate_limit WHERE id IN ('expired-ip','active-ip')",
+      )
+      .all(),
+  ).toEqual([{ id: "active-ip" }]);
+  expect(
+    storage.sqlite.query("SELECT COUNT(*) AS n FROM auth_session").get(),
+  ).toEqual({ n: 1 });
+  expect(
+    storage.sqlite.query("SELECT COUNT(*) AS n FROM auth_user").get(),
+  ).toEqual({ n: 1 });
+  expect(
+    storage.sqlite.query("SELECT COUNT(*) AS n FROM auth_account").get(),
+  ).toEqual({ n: 1 });
 });

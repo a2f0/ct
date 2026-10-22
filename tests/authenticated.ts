@@ -7,10 +7,7 @@ export const test = base.extend<Record<never, never>, { authState: State }>({
     async ({ playwright }, use, workerInfo) => {
       const context = await playwright.request.newContext({
         extraHTTPHeaders: {
-          "CF-Connecting-IP":
-            workerInfo.project.name === "firefox"
-              ? "203.0.113.21"
-              : "203.0.113.20",
+          "CF-Connecting-IP": `198.51.100.${(workerInfo.workerIndex % 250) + 1}`,
         },
       });
       const response = await context.post(

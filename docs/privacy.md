@@ -70,9 +70,15 @@ Dashboard authentication uses a Secure, HttpOnly, SameSite=Lax, host-only cookie
 Separate auth tables store administrators' names, emails, salted password hashes,
 and session tokens, expiry, IP addresses and user agents. Sessions expire after
 eight hours without renewal; logout and operator password resets revoke sessions.
-Expired sessions are rejected and removed when read; there is no scheduled
-auth-record purge, and the 90-day click-retention job does not delete accounts
-or auth records. These administrative records
+Expired sessions are rejected immediately. The daily 03:17 UTC cleanup deletes
+expired sessions and verification records (normally within 24 hours of expiry).
+Rate-limit keys contain the request IP and auth route for all callers, including
+failed sign-ins and people without accounts. Keys whose last request was over
+24 hours ago are deleted by the same daily job (normally within 48 hours of last
+activity). Repeated activity refreshes that cutoff. Administrator accounts and
+password hashes remain until an operator deletes the account. Auth cleanup and
+the separate 90-day click-retention rule do not delete active accounts.
+These administrative records
 are not joined to click records and are unrelated to visitor attribution. No
 self-service registration or email recovery service is enabled.
 

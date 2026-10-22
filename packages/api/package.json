@@ -13,7 +13,6 @@
     "@cloudflare/workers-types": "5.20261016.1"
   },
   "dependencies": {
-    "@better-auth/core": "1.7.12",
     "better-auth": "1.7.12"
   }
 }

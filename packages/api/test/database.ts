@@ -49,7 +49,12 @@ export async function database() {
         statements.map((statement) => ({
           success: true,
           results: sqlite.query(statement.sql).all(...statement.values),
-          meta: { changes: 0, last_row_id: 0 },
+          meta: {
+            changes: (
+              sqlite.query("SELECT changes() AS n").get() as { n: number }
+            ).n,
+            last_row_id: 0,
+          },
         })),
       )();
     },

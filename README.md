@@ -29,7 +29,9 @@ bun run --cwd packages/api db:migrate:local
 bun run dev
 ```
 
-The API runs on port 8787 and the UI on 5173. For dashboard data, build the UI
+The API runs on port 8787; Vite on 5173 is for static UI development only.
+Authenticated local testing uses the admin Worker at http://localhost:8788,
+not the Vite proxy. Build the UI
 and run the admin Worker in a second terminal on 8788. Create an ignored
 packages/api/.dev.vars with a unique local BETTER_AUTH_SECRET (at least 32 random
 characters); keep it out of logs and version control. Use the local URL override:

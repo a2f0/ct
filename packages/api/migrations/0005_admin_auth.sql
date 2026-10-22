@@ -52,3 +52,5 @@ CREATE INDEX auth_session_user ON auth_session(userId);
 CREATE INDEX auth_session_expiry ON auth_session(expiresAt);
 CREATE INDEX auth_account_user ON auth_account(userId);
 CREATE INDEX auth_verification_identifier ON auth_verification(identifier);
+CREATE INDEX auth_rate_limit_last_request ON auth_rate_limit(lastRequest);
+CREATE INDEX auth_verification_expiry ON auth_verification(expiresAt);

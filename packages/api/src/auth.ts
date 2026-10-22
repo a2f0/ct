@@ -12,6 +12,7 @@ function buildAuth(env: AdminEnv) {
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [origin],
     logger: { disabled: true },
+    telemetry: { enabled: false },
     advanced: {
       database: { generateId: "uuid" },
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },

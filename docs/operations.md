@@ -51,10 +51,17 @@ openssl rand -base64 48 | bunx --no-install wrangler secret put BETTER_AUTH_SECR
 bun run deploy
 ```
 
+If an inactive version already exists, use `wrangler versions secret put
+BETTER_AUTH_SECRET --config packages/api/wrangler.admin.json` in that same pipe
+instead. It stages the secret without activating the version; verify its name
+with `wrangler secret list`, then use the normal migration-first deploy. Never
+activate a staged auth version before its schema exists.
+
 Do not replace an existing secret during ordinary deployments. Never reuse
 another application's secret. BETTER_AUTH_URL is the public dashboard origin in
 the admin config; trusted origins and POST Origin checks use that exact origin.
-The deploy script applies migrations before uploading either Worker. A missing
+The deploy script checks the signing secret’s name and exact HTTPS auth origin,
+then applies migrations before uploading either Worker. A missing
 or invalid auth secret fails closed: private routes return 503, never analytics.
 Unauthenticated data requests return 401 with no site names or event metadata;
 private page routes redirect to /login with a same-origin return path. Public
@@ -73,7 +80,9 @@ Use --local for the local D1 database. Automation can pass one password line via
 stdin with --password-stdin; use a password manager or an in-memory pipe, never a
 literal password in shell history, command arguments, environment variables, logs,
 or a temporary SQL file. The CLI hashes with Better Auth's compatible password
-hasher and uses bound D1 statements in a transaction. Reset replaces the credential
+hasher and uses bound D1 statements in a transaction. It disables Wrangler console
+and disk logging during account operations, including when debug logging is set
+in the caller’s environment. Reset replaces the credential
 and revokes every session atomically. No HTTP provisioning or recovery endpoint
 exists, and registration is disabled both in Better Auth and the Worker allowlist.
 
@@ -88,6 +97,20 @@ their password at /account; it revokes their other sessions. Logout or a data AP
 401 clears the current UI report and shows login. There is no email service;
 operator reset is the recovery path. All provisioned accounts have read access to
 all registered sites; no click-writing or account-management HTTP API is exposed.
+
+The admin Worker explicitly sets limits.cpu_ms to 30000 for Better Auth’s scrypt
+password verification. Cloudflare must support that budget; the Workers Free
+10 ms budget is unsuitable. Verify version metadata/capability on the actual
+account, and perform the ephemeral live login after deployment because local
+Wrangler does not enforce production CPU limits. Do not weaken password hashing
+parameters to fit a smaller budget. See [Worker CPU limits](https://developers.cloudflare.com/workers/platform/limits/#cpu-time).
+
+The daily collector cron also removes expired auth sessions and verifications,
+and auth rate-limit keys last used over 24 hours ago. With its daily cadence,
+expired records normally disappear within 24 hours and inactive rate-limit keys
+within 48 hours. The latter include failed/anonymous auth requests, not just
+administrator IPs. Active accounts are retained. Migration 0005 must run before
+the updated collector because its cron references these auth tables.
 
 The isolated browser suite provisions through the actual CLI, runs both Workers,
 and exercises login, private deep links, logout, password change, reset, revoked
@@ -224,7 +247,8 @@ publication from racing the manual migration/Worker rollout. Readiness polling i
 bounded; if deployment takes longer, complete it and rerun Publish client. Do not
 bypass the gate. Future incompatible wire changes must raise the client readiness
 requirement and deploy matching collector support first. Old clients remain
-supported. Only after both deployment and the registry tarball are verified may
+supported. If admin status codes change in future, update the private-access
+readiness checks in the same rollout. Only after both deployment and the registry tarball are verified may
 consumers adopt the new release.
 
 The app-choice query is optional metadata: if it fails, `/api/sites` still returns

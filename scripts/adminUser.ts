@@ -149,6 +149,7 @@ if (import.meta.main) {
       "Name must be at most 100 characters",
       "Account already exists; use reset to change its password",
       "Account does not exist",
+      "Credential account is missing",
     ];
     console.error(
       safe.includes(message)

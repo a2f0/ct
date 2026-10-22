@@ -21,14 +21,18 @@ export async function provisionAccount(
   const name = input.name?.trim() || "Administrator";
   if (name.length > 100) throw new Error("Name must be at most 100 characters");
   const existing = await db
-    .prepare("SELECT id FROM auth_user WHERE email = ?")
+    .prepare(
+      "SELECT u.id, a.id AS credentialId FROM auth_user u LEFT JOIN auth_account a ON a.userId = u.id AND a.providerId = 'credential' WHERE u.email = ?",
+    )
     .bind(email)
-    .all<{ id: string }>();
+    .all<{ id: string; credentialId: string | null }>();
   const userId = existing.results[0]?.id;
   if (input.action === "create" && userId)
     throw new Error("Account already exists; use reset to change its password");
   if (input.action === "reset" && !userId)
     throw new Error("Account does not exist");
+  if (input.action === "reset" && !existing.results[0]?.credentialId)
+    throw new Error("Credential account is missing");
   const hash = await hashPassword(input.password);
   const now = new Date().toISOString();
   if (input.action === "create") {
@@ -46,7 +50,7 @@ export async function provisionAccount(
         .bind(crypto.randomUUID(), id, id, hash, now, now),
     ]);
   } else {
-    await db.batch([
+    const result = await db.batch([
       db
         .prepare(
           "UPDATE auth_account SET password = ?, updatedAt = ? WHERE userId = ? AND providerId = 'credential'",
@@ -59,5 +63,7 @@ export async function provisionAccount(
         .prepare("DELETE FROM auth_session WHERE userId = ?")
         .bind(userId ?? null),
     ]);
+    if (result[0]?.meta.changes !== 1)
+      throw new Error("Credential account is missing");
   }
 }

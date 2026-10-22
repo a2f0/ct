@@ -59,5 +59,8 @@
   "observability": {
     "enabled": false
   },
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  "limits": {
+    "cpu_ms": 30000
+  }
 }

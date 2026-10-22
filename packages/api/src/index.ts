@@ -128,12 +128,22 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
 export default {
   fetch: ingest,
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+    const now = Date.now();
     await env.DB.batch([
       env.DB.prepare("DELETE FROM clicks WHERE timestamp < ?").bind(
-        Date.now() - RETENTION_DAYS * DAY,
+        now - RETENTION_DAYS * DAY,
       ),
       env.DB.prepare(
         "DELETE FROM locations WHERE NOT EXISTS (SELECT 1 FROM clicks WHERE clicks.location_id = locations.id)",
+      ),
+      env.DB.prepare("DELETE FROM auth_rate_limit WHERE lastRequest < ?").bind(
+        now - DAY,
+      ),
+      env.DB.prepare("DELETE FROM auth_session WHERE expiresAt <= ?").bind(
+        new Date(now).toISOString(),
+      ),
+      env.DB.prepare("DELETE FROM auth_verification WHERE expiresAt <= ?").bind(
+        new Date(now).toISOString(),
       ),
     ]);
   },

@@ -1,4 +1,7 @@
 import { spawn } from "node:child_process";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 
 const admin = "http://127.0.0.1:4176";
@@ -11,6 +14,7 @@ async function account(
   email: string,
   password: string,
 ) {
+  const logDirectory = await mkdtemp(join(tmpdir(), "ct-cli-test-logs-"));
   const child = spawn(
     "node",
     [
@@ -23,7 +27,17 @@ async function account(
       email,
       "--password-stdin",
     ],
-    { stdio: "pipe" },
+    {
+      stdio: "pipe",
+      env: {
+        ...process.env,
+        FORCE_COLOR: undefined,
+        WRANGLER_LOG: "debug",
+        WRANGLER_WRITE_LOGS: "true",
+        WRANGLER_LOG_SANITIZE: "false",
+        WRANGLER_LOG_PATH: logDirectory,
+      },
+    },
   );
   child.stdin.write(`${password}\n`);
   child.stdin.end();
@@ -40,7 +54,15 @@ async function account(
   });
   // Report only booleans on failure: credentials must not enter trace output.
   expect(output.includes(password)).toBe(false);
+  const logs = await readdir(logDirectory);
+  await rm(logDirectory, { recursive: true, force: true });
+  expect(logs).toEqual([]);
   expect(code).toBe(0);
+  const expected =
+    action === "create"
+      ? "Administrator account created."
+      : "Password reset; all existing sessions revoked.";
+  expect(output.trim() === expected).toBe(true);
 }
 async function signIn(page: Page, email: string, password: string) {
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -140,6 +162,23 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
   await expect(
     page.getByRole("combobox", { name: "Environment", exact: true }),
   ).toHaveValue("staging");
+  const duringReturn: string[] = [];
+  const capture = (request: import("@playwright/test").Request) => {
+    if (/\/api\/(summary|events)/.test(request.url()))
+      duringReturn.push(new URL(request.url()).pathname);
+  };
+  page.on("request", capture);
+  await page.goto(
+    `${admin}/login?returnTo=${encodeURIComponent("/recent?site=skyline&environment=staging")}`,
+  );
+  await expect(page).toHaveURL(
+    `${admin}/recent?site=skyline&environment=staging`,
+  );
+  await expect(
+    page.getByRole("table", { name: "Recent clicks" }),
+  ).toBeVisible();
+  expect(duringReturn).not.toContain("/api/summary");
+  page.off("request", capture);
   for (const returnTo of [
     "https://evil.example/recent",
     "//evil.example/recent",
@@ -191,4 +230,22 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
     405,
   );
   expect(errors).toEqual([]);
+});
+
+test("sign-in service errors are distinguished from invalid credentials", async ({
+  page,
+}) => {
+  await page.route("**/api/auth/sign-in/email", (route) =>
+    route.fulfill({
+      status: 503,
+      json: { error: "Authentication temporarily unavailable" },
+    }),
+  );
+  await page.goto(`${admin}/login`);
+  await page.getByLabel("Email", { exact: true }).fill("fixture@example.test");
+  await page.getByLabel("Password", { exact: true }).fill(initialPassword);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Sign-in is temporarily unavailable. Please try again.",
+  );
 });

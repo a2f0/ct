@@ -24,8 +24,7 @@ Worker route allowlist. Accounts are created/reset only through the operator CLI
 which uses bound D1 statements and hidden prompts or stdin, never password args.
 Keep auth tables separate from clicks; an administrator's account/session is not
 a visitor identifier. Never expose data or site metadata before authorization.
-Do not add raw text,
-form values, URLs, user identifiers, or persistent visitor identifiers to clicks.
+Do not add raw text, form values, URLs, user identifiers, or persistent visitor identifiers to clicks.
 The only exception is server-recorded request IP addresses and coarse Cloudflare
 location metadata as documented in docs/privacy.md. Do not add separate visitor
 profiles, session identifiers, hashed IP identifiers, or browser fingerprints.

@@ -1,16 +1,15 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { admin as handleAdmin } from "../src/admin";
+import type { AdminEnv, Env } from "../src/env";
+import worker, { ingest } from "../src/index";
 import { authenticateTestAccount, TEST_AUTH } from "./authHelpers";
+import { database } from "./database";
 
 let cookie = "";
 const admin = (request: Request, env: AdminEnv) => {
   request.headers.set("Cookie", cookie);
   return handleAdmin(request, env);
 };
-
-import type { AdminEnv, Env } from "../src/env";
-import worker, { ingest } from "../src/index";
-import { database } from "./database";
 
 let storage: Awaited<ReturnType<typeof database>>;
 let env: Env;
