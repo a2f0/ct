@@ -5,7 +5,12 @@
   "compatibility_date": "2026-10-16",
   "workers_dev": false,
   "preview_urls": false,
-  "routes": [{ "pattern": "ct.a2f0.net", "custom_domain": true }],
+  "routes": [
+    {
+      "pattern": "ct.a2f0.net",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
@@ -18,10 +23,37 @@
     {
       "name": "INGEST_LIMITER",
       "namespace_id": "782001",
-      "simple": { "limit": 120, "period": 60 }
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
     }
   ],
-  "vars": { "SITES": { "skyline": ["https://skyline.devopsrockstars.com"] } },
-  "triggers": { "crons": ["17 3 * * *"] },
-  "observability": { "enabled": false }
+  "vars": {
+    "SITES": {
+      "skyline": {
+        "https://skyline.devopsrockstars.com": "production"
+      },
+      "a2f0-net": {
+        "https://a2f0.net": "production"
+      },
+      "devopsrockstars": {
+        "https://devopsrockstars.com": "production",
+        "https://www.devopsrockstars.com": "production",
+        "https://staging.devopsrockstars.com": "staging"
+      },
+      "balebase": {
+        "https://balebase.com": "production",
+        "https://app.balebase.com": "production",
+        "https://website-staging.balebase.com": "staging",
+        "https://app-staging.balebase.com": "staging"
+      }
+    }
+  },
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
+  "observability": {
+    "enabled": false
+  }
 }

@@ -1,4 +1,4 @@
-import { type AdminEnv, json, RETENTION_DAYS } from "./env";
+import { type AdminEnv, DAY, json, RETENTION_DAYS } from "./env";
 import { parseFilters, recent, summary } from "./queries";
 
 export async function admin(
@@ -32,16 +32,30 @@ export async function admin(
     ).success
   )
     return json({ error: "Too many requests" }, 429, { "Retry-After": "60" });
-  if (url.pathname === "/api/sites")
-    return json({
-      sites: Object.keys(env.SITES).sort(),
-      retentionDays: RETENTION_DAYS,
-      access: "public-read-only",
-    });
-  const filters = parseFilters(url, env.SITES);
-  if (!filters)
-    return json({ error: "Invalid site or date range (maximum 90 days)" }, 400);
   try {
+    if (url.pathname === "/api/sites") {
+      const apps = await env.DB.prepare(
+        "SELECT DISTINCT app FROM clicks WHERE app IS NOT NULL AND timestamp >= ? ORDER BY app LIMIT 500",
+      )
+        .bind(Date.now() - RETENTION_DAYS * DAY)
+        .all<{ app: string }>();
+      return json({
+        sites: Object.keys(env.SITES).sort(),
+        apps: apps.results.map((row) => row.app),
+        environments: ["production", "staging"],
+        retentionDays: RETENTION_DAYS,
+        access: "public-read-only",
+      });
+    }
+    const filters = parseFilters(url, env.SITES);
+    if (!filters)
+      return json(
+        {
+          error:
+            "Invalid site, app, environment or date range (maximum 90 days)",
+        },
+        400,
+      );
     if (url.pathname === "/api/summary")
       return json(await summary(env.DB, filters));
     if (url.pathname === "/api/events")

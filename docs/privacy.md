@@ -5,7 +5,7 @@ public event field is visible there; consumers must pass stable, non-sensitive l
 and route templates. Authentication can be added later without changing ingestion.
 
 Each row contains the public site name, a random per-event UUID, the click time,
-normalized page name, element tag, optional explicit data-ct label, request IP,
+normalized page name, optional stable app slug, registered deployment environment, element tag, optional explicit data-ct label, request IP,
 and a reference to the shared location record described below. The SDK creates
 no separate visitor or session identifier. It never reads text,
 href, class, DOM ID, form values, query strings, fragments, or referrers. It sends
@@ -59,8 +59,18 @@ Sec-GPC metadata suppression rule. With the default client configuration, GPC
 prevents the batch from being sent at all.
 Disabling clears the queue and aborts an in-flight request when possible.
 It cannot erase data already received. Synthetic clicks and webdriver browsers are
-excluded. init must still be called only by the consumer's production bootstrap,
+excluded. init must still be called only by the consumer's deployed-site bootstrap,
 guarded by the exact origin.
 
 The admin stores only its dark/light theme preference in local browser storage
 (ct.theme). This preference is never sent with click events or used as an identifier.
+
+
+App attribution comes only from the explicit tracker app option or the nearest
+valid data-ct-app boundary, never from DOM text, IDs, class names, or iframe URLs.
+App names are bounded lowercase slugs and must not identify users. Environment is
+production or staging, resolved against the site's registered request Origin.
+These public dimensions describe the application and deployment, not the visitor.
+Historical app values stay null; only Skyline's previously known production
+environment is backfilled. Dashboard views default to production, with staging
+and all-environment views available explicitly.

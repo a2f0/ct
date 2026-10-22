@@ -63,7 +63,11 @@ export function createTracker(options: TrackerOptions): Tracker {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=UTF-8" },
-        body: JSON.stringify({ site: options.site, events: batch }),
+        body: JSON.stringify({
+          site: options.site,
+          environment: options.environment,
+          events: batch,
+        }),
         credentials: "omit",
         referrerPolicy: "no-referrer",
         keepalive: true,
@@ -104,7 +108,11 @@ export function createTracker(options: TrackerOptions): Tracker {
 
   function click(event: MouseEvent): void {
     if (!event.isTrusted || blocked()) return;
-    const target = clickTarget(event, options.capture ?? "interactive");
+    const target = clickTarget(
+      event,
+      options.capture ?? "interactive",
+      options.app ?? null,
+    );
     if (!target || queue.length >= capacity) return;
     try {
       queue.push({
@@ -145,6 +153,16 @@ export function createTracker(options: TrackerOptions): Tracker {
         return false;
       if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(options.site))
         throw new Error("Invalid ct site identifier");
+      if (
+        options.app !== undefined &&
+        !/^[a-z0-9][a-z0-9-]{0,63}$/.test(options.app)
+      )
+        throw new Error("Invalid ct app identifier");
+      if (
+        options.environment !== undefined &&
+        !["production", "staging"].includes(options.environment)
+      )
+        throw new Error("Invalid ct environment");
       const url = new URL(endpoint);
       if (
         url.protocol !== "https:" &&

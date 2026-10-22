@@ -53,7 +53,10 @@ beforeEach(async () => {
   storage = await database();
   env = {
     DB: storage.db,
-    SITES: { skyline: [origin], other: [origin] },
+    SITES: {
+      skyline: { [origin]: "production" },
+      other: { [origin]: "production" },
+    },
     INGEST_LIMITER: { limit: async () => ({ success: true }) },
   };
 });

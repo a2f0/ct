@@ -111,6 +111,8 @@ export function RecentClicks({
             <tr>
               <th scope="col">Time</th>
               <th scope="col">Site</th>
+              <th scope="col">App</th>
+              <th scope="col">Environment</th>
               <th scope="col">IP address</th>
               <th scope="col">Location</th>
               <th scope="col">Page</th>
@@ -127,6 +129,8 @@ export function RecentClicks({
                   </time>
                 </td>
                 <td>{event.site}</td>
+                <td>{event.app ?? "Unknown"}</td>
+                <td>{event.environment ?? "Unknown"}</td>
                 <td className="ip-address">{event.ip ?? "Unknown"}</td>
                 <td className="event-location">
                   {event.location ? (

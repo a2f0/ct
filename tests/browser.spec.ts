@@ -18,13 +18,14 @@ test("a full 50-click delivery round-trips through the real Worker and migrated 
     page: "/batch-test",
     target: "button",
     label: "full-batch",
+    app: "skyline",
   }));
   const response = await request.post("http://127.0.0.1:4175/v1/clicks", {
     headers: {
       Origin: "http://127.0.0.1:4174",
       "CF-Connecting-IP": "203.0.113.10",
     },
-    data: { site: "skyline", events },
+    data: { site: "skyline", environment: "production", events },
   });
   expect(response.status()).toBe(202);
   const result = await request.get(
@@ -43,6 +44,8 @@ test("a full 50-click delivery round-trips through the real Worker and migrated 
     ),
   ).toBe(true);
   for (const event of stored) {
+    expect(event.app).toBe("skyline");
+    expect(event.environment).toBe("production");
     expect(event.ip).not.toBeNull();
     expect(isIP(event.ip)).toBeGreaterThan(0);
     if (isIP(event.ip) === 6) {
@@ -174,4 +177,34 @@ test("GPC requires explicit override and site opt-out still stops delivery", asy
     .click();
   await page.evaluate(() => window.tracker.flush());
   expect(requests).toHaveLength(1);
+});
+
+test("app boundaries classify unlabeled canvas inside an open shadow root", async ({
+  page,
+}) => {
+  const batches: {
+    environment: string;
+    events: { app: string | null; target: string; label: string | null }[];
+  }[] = [];
+  await page.route("**/v1/clicks", async (route) => {
+    batches.push(route.request().postDataJSON());
+    await route.fulfill({ status: 202, body: "{}" });
+  });
+  await page.goto("/?human&dimensions");
+  await page.waitForFunction(() => window.ready);
+  await page.evaluate(() => window.tracker.init());
+  await page.locator("#shadow canvas").click();
+  await page.locator("#shadow [data-ct-app=settings] button").click();
+  await page.locator("#blank").click();
+  await page.evaluate(() => window.tracker.flush());
+  const events = batches.flatMap((batch) => batch.events);
+  expect(events.map((event) => event.app)).toEqual([
+    "skyline",
+    "settings",
+    "desktop",
+  ]);
+  expect(events[0]).toMatchObject({ target: "canvas", label: null });
+  expect(batches.every((batch) => batch.environment === "production")).toBe(
+    true,
+  );
 });

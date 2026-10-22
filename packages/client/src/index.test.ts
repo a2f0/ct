@@ -11,11 +11,13 @@ const descriptors = new Map<string, PropertyDescriptor | undefined>();
 let requests: {
   body: {
     site: string;
+    environment?: string;
     events: {
       id: string;
       page: string;
       target: string;
       label: string | null;
+      app: string | null;
     }[];
   };
   init: RequestInit;
@@ -480,5 +482,80 @@ describe("queue and privacy", () => {
     click();
     await ct.flush();
     expect(requests).toHaveLength(0);
+  });
+});
+
+describe("app and environment dimensions", () => {
+  test("explicit app defaults and environment are bounded before listeners attach", async () => {
+    for (const app of [
+      "",
+      "Private Name",
+      "person@example.com",
+      "A",
+      "a".repeat(65),
+    ])
+      expect(() => tracker({ site: "skyline", app }).init()).toThrow(
+        "Invalid ct app",
+      );
+    expect(() =>
+      tracker({
+        site: "skyline",
+        environment: "preview" as "production",
+      }).init(),
+    ).toThrow("Invalid ct environment");
+    const ct = tracker({
+      site: "skyline",
+      app: "desktop",
+      environment: "production",
+    });
+    ct.init();
+    click();
+    await ct.flush();
+    expect(requests[0]?.body.environment).toBe("production");
+    expect(requests[0]?.body.events[0]?.app).toBe("desktop");
+  });
+  test("nearest app boundary crosses open shadow roots for unlabeled canvas and controls", async () => {
+    const ct = tracker({ site: "skyline", app: "desktop", capture: "all" });
+    ct.init();
+    browser.document.body.innerHTML =
+      '<section data-ct-app="skyline"><div id="host"></div></section>';
+    const root = browser.document
+      .querySelector("#host")
+      ?.attachShadow({ mode: "open" });
+    if (!root) throw new Error("missing shadow root");
+    root.innerHTML =
+      '<canvas></canvas><div data-ct-app="settings"><button data-ct="toggle">Text</button></div><div data-ct-app="private@email"><button>Private</button></div>';
+    for (const element of [
+      root.querySelector("canvas"),
+      ...root.querySelectorAll("button"),
+    ]) {
+      const event = new browser.MouseEvent("click", {
+        bubbles: true,
+        composed: true,
+      });
+      Object.defineProperty(event, "isTrusted", { value: true });
+      element?.dispatchEvent(event);
+    }
+    await ct.flush();
+    expect(requests[0]?.body.events.map(({ app }) => app)).toEqual([
+      "skyline",
+      "settings",
+      null,
+    ]);
+    expect(requests[0]?.body.events[0]).toMatchObject({
+      target: "canvas",
+      label: null,
+    });
+    expect(JSON.stringify(requests)).not.toContain("private@email");
+  });
+  test("missing app stays null and explicit exclusions still win across app boundaries", async () => {
+    const ct = tracker();
+    ct.init();
+    click();
+    await ct.flush();
+    expect(requests[0]?.body.events[0]?.app).toBeNull();
+    click('<div data-ct-ignore data-ct-app="skyline">Ignored</div>');
+    await ct.flush();
+    expect(requests).toHaveLength(1);
   });
 });
