@@ -53,6 +53,16 @@ not cached. The UI displays UTC event dates and no unique-visitor metric.
 Pagination is a live view, not a snapshot: delayed arrivals can land in a page
 already read. Refresh to include arrivals that precede the current cursor.
 
+The dashboard overview is at / and recent clicks are at /recent. Both routes
+support direct loads and browser history, and preserve site and day filters in
+their URLs. Unknown sites and invalid day ranges fall back to all sites and seven
+days. The recent-click view loads older pages automatically as you scroll, with a
+keyboard-accessible Load more fallback. A failed request pauses loading until
+Retry; a repeated pagination cursor requires Refresh data. Changing filters or
+refreshing starts a new date window and discards pending requests and previously
+loaded pages. An overview refresh preserves its last successful report if the
+request fails.
+
 ## npm
 
 The client publishes as @a2f0/ct-client. Initial publication requires an authenticated
