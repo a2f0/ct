@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { Window } from "happy-dom";
 import { validClick } from "../../api/src/validation";
 import { createTracker } from "./index";
-import type { Tracker } from "./types";
+import type { Tracker, TrackerOptions } from "./types";
 
 let browser: Window;
 let trackers: Tracker[];
@@ -198,6 +198,151 @@ describe("click metadata", () => {
 });
 
 describe("queue and privacy", () => {
+  test.each([
+    { name: "omitted", options: {} },
+    { name: "false", options: { overrideGpc: false } },
+    {
+      name: "a truthy non-boolean",
+      options: { overrideGpc: "true" as unknown as boolean },
+    },
+  ])(
+    "GPC blocks capture and flush when overrideGpc is $name",
+    async ({ options }) => {
+      const setGpc = (value: boolean) =>
+        Object.defineProperty(browser.navigator, "globalPrivacyControl", {
+          value,
+          configurable: true,
+        });
+      setGpc(true);
+      const ct = tracker({ site: "skyline", ...options });
+      expect(ct.init()).toBe(false);
+      click();
+      setGpc(false);
+      await ct.flush();
+      expect(requests).toHaveLength(0);
+      click();
+      setGpc(true);
+      await ct.flush();
+      expect(requests).toHaveLength(0);
+      setGpc(false);
+      await ct.flush();
+      expect(requests).toHaveLength(0);
+      click();
+      await ct.flush();
+      expect(requests[0]?.body.events).toHaveLength(1);
+    },
+  );
+  test("explicit GPC override captures and flushes only for that tracker", async () => {
+    Object.defineProperty(browser.navigator, "globalPrivacyControl", {
+      value: true,
+      configurable: true,
+    });
+    const options: TrackerOptions = { site: "overridden", overrideGpc: true };
+    const overridden = tracker(options);
+    const normal = tracker({ site: "normal" });
+    // Configuration is fixed per tracker rather than a global privacy setting.
+    options.overrideGpc = false;
+    expect(overridden.init()).toBe(true);
+    expect(normal.init()).toBe(false);
+    click();
+    await Promise.all([normal.flush(), overridden.flush()]);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.body.site).toBe("overridden");
+    expect(requests[0]?.body.events).toHaveLength(1);
+    expect(Reflect.get(browser.navigator, "globalPrivacyControl")).toBe(true);
+  });
+  test.each([
+    "DNT",
+    "extension",
+    "saved opt-out",
+    "webdriver",
+    "storage error",
+    "privacy read error",
+  ])("GPC override preserves %s at init, capture and flush", async (guard) => {
+    Object.defineProperty(browser.navigator, "globalPrivacyControl", {
+      value: true,
+    });
+    const storage = browser.localStorage;
+    function setGuard(enabled: boolean) {
+      switch (guard) {
+        case "DNT":
+          Object.defineProperty(browser.navigator, "doNotTrack", {
+            value: enabled ? "1" : "0",
+            configurable: true,
+          });
+          break;
+        case "extension":
+          browser.document.documentElement.toggleAttribute(
+            "data-ct-disabled",
+            enabled,
+          );
+          break;
+        case "saved opt-out":
+          if (enabled) storage.setItem("ct:opt-out", "1");
+          else storage.removeItem("ct:opt-out");
+          break;
+        case "webdriver":
+          Object.defineProperty(browser.navigator, "webdriver", {
+            value: enabled,
+            configurable: true,
+          });
+          break;
+        case "storage error":
+          Object.defineProperty(globalThis, "localStorage", {
+            configurable: true,
+            get() {
+              if (enabled) throw new Error("Storage blocked");
+              return storage;
+            },
+          });
+          break;
+        case "privacy read error":
+          Object.defineProperty(browser.navigator, "doNotTrack", {
+            configurable: true,
+            get() {
+              if (enabled) throw new Error("Privacy setting unavailable");
+              return "0";
+            },
+          });
+          break;
+      }
+    }
+    const ct = tracker({ site: "skyline", overrideGpc: true });
+    setGuard(true);
+    expect(ct.init()).toBe(false);
+    setGuard(false);
+    expect(ct.init()).toBe(true);
+    click();
+    setGuard(true);
+    await ct.flush();
+    expect(requests).toHaveLength(0);
+    click();
+    setGuard(false);
+    await ct.flush();
+    expect(requests).toHaveLength(0);
+    click();
+    await ct.flush();
+    expect(requests[0]?.body.events).toHaveLength(1);
+  });
+  test("GPC override preserves explicit opt-out even without saved storage", async () => {
+    Object.defineProperty(browser.navigator, "globalPrivacyControl", {
+      value: true,
+    });
+    const ct = tracker({ site: "skyline", overrideGpc: true });
+    expect(ct.init()).toBe(true);
+    click();
+    ct.setOptOut(true);
+    browser.localStorage.removeItem("ct:opt-out");
+    click();
+    await ct.flush();
+    expect(requests).toHaveLength(0);
+    ct.setOptOut(false);
+    await ct.flush();
+    expect(requests).toHaveLength(0);
+    click();
+    await ct.flush();
+    expect(requests[0]?.body.events).toHaveLength(1);
+  });
   test.each([408, 429, 500, 503])(
     "retries status %i without changing event IDs",
     async (status) => {

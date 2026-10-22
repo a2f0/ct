@@ -92,6 +92,47 @@ test("disabling tracking clears pending events and prevents further requests", a
   expect(requests).toHaveLength(0);
 });
 
+test("GPC requires explicit override and site opt-out still stops delivery", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "globalPrivacyControl", {
+      value: true,
+    }),
+  );
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/v1/clicks")) requests.push(request.url());
+  });
+  await page.goto("/?human=1");
+  await page.waitForFunction(() => window.ready);
+  expect(await page.evaluate(() => window.tracker.init())).toBe(false);
+  await page
+    .getByRole("button", { name: "Open private building", exact: true })
+    .click();
+  await page.evaluate(() => window.tracker.flush());
+  expect(requests).toHaveLength(0);
+
+  await page.goto("/?human=1&overrideGpc=true");
+  await page.waitForFunction(() => window.ready);
+  expect(await page.evaluate(() => window.tracker.init())).toBe(true);
+  const response = page.waitForResponse((response) =>
+    response.url().endsWith("/v1/clicks"),
+  );
+  await page
+    .getByRole("button", { name: "Open private building", exact: true })
+    .click();
+  await page.evaluate(() => window.tracker.flush());
+  expect((await response).status()).toBe(202);
+  expect(requests).toHaveLength(1);
+  await page.evaluate(() => window.tracker.setOptOut(true));
+  await page
+    .getByRole("button", { name: "Open private building", exact: true })
+    .click();
+  await page.evaluate(() => window.tracker.flush());
+  expect(requests).toHaveLength(1);
+});
+
 test("public dashboard loads data with filtering and a responsive read-only view", async ({
   page,
 }) => {

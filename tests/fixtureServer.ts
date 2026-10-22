@@ -10,7 +10,7 @@ import {createTracker} from '/client.js';
 if (new URL(location.href).searchParams.has('human')) Object.defineProperty(navigator, 'webdriver', {get: () => false});
 const root = document.querySelector('#shadow').attachShadow({mode:'open'});
 root.innerHTML='<button data-ct="shadow-building">Shadow building</button>';
-window.tracker=createTracker({site:'skyline',capture:'all',page:()=>'/test/:route',endpoint:'http://127.0.0.1:4175/v1/clicks',flushIntervalMs:1000});
+window.tracker=createTracker({site:'skyline',capture:'all',page:()=>'/test/:route',endpoint:'http://127.0.0.1:4175/v1/clicks',flushIntervalMs:1000,overrideGpc:new URL(location.href).searchParams.get('overrideGpc')==='true'});
 window.ready=true;
 const probe = new URL(location.href).searchParams.get('probe');
 if (probe) {
