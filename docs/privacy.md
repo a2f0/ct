@@ -31,6 +31,6 @@ may pass overrideGpc: true to createTracker before init to ignore GPC for that
 tracker's capture and delivery. This option defaults to false and does not override
 the extension, site opt-out, DNT, storage errors, or automated-browser guards.
 Disabling clears the queue and aborts an in-flight request when possible.
-It cannot erase data already
-received. Synthetic clicks and webdriver browsers are excluded. init must still
-be called only by the consumer's production bootstrap, guarded by the exact origin.
+It cannot erase data already received. Synthetic clicks and webdriver browsers are
+excluded. init must still be called only by the consumer's production bootstrap,
+guarded by the exact origin.
