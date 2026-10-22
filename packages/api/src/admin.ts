@@ -14,7 +14,7 @@ export async function admin(
     if (response.headers.get("Content-Type")?.includes("text/html"))
       response.headers.set(
         "Cache-Control",
-        "public, max-age=0, must-revalidate, no-transform",
+        `${asset.headers.get("Cache-Control") ?? "public, max-age=0, must-revalidate"}, no-transform`,
       );
     response.headers.set(
       "Content-Security-Policy",
