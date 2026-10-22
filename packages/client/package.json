@@ -1,6 +1,6 @@
 {
   "name": "@a2f0/ct-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "UNLICENSED",
   "description": "Explicitly initialized, batched click tracking with browser opt-out support",
