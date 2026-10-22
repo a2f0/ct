@@ -4,6 +4,7 @@ export interface Click {
   page: string;
   target: string;
   label: string | null;
+  app?: string | null;
 }
 
 const uuid =
@@ -13,7 +14,14 @@ export function validClick(value: unknown): value is Click {
   if (!value || typeof value !== "object") return false;
   const event = value as Record<string, unknown>;
   return (
-    Object.keys(event).sort().join(",") === "id,label,page,target,timestamp" &&
+    [
+      "id,label,page,target,timestamp",
+      "app,id,label,page,target,timestamp",
+    ].includes(Object.keys(event).sort().join(",")) &&
+    (event.app === undefined ||
+      event.app === null ||
+      (typeof event.app === "string" &&
+        /^[a-z0-9][a-z0-9-]{0,63}$/.test(event.app))) &&
     typeof event.id === "string" &&
     uuid.test(event.id) &&
     typeof event.timestamp === "number" &&

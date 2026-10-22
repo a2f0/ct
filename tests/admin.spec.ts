@@ -5,6 +5,8 @@ const admin = "http://127.0.0.1:4176";
 function event(index: number): ClickRow {
   return {
     site: "skyline",
+    app: null,
+    environment: "production",
     id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
     timestamp: Date.now() - index * 1000,
     page: `/page-${index}`,
@@ -185,7 +187,13 @@ test("a failed page pauses automatic loading and supports keyboard retry", async
   expect(pages).toBe(2);
 });
 
-for (const action of ["refresh", "site filter", "date filter"] as const) {
+for (const action of [
+  "refresh",
+  "site filter",
+  "date filter",
+  "app filter",
+  "environment filter",
+] as const) {
   test(`${action} cancels pending pagination and replaces the old rows`, async ({
     page,
   }) => {
@@ -223,6 +231,14 @@ for (const action of ["refresh", "site filter", "date filter"] as const) {
       await page
         .getByRole("combobox", { name: "Site", exact: true })
         .selectOption("skyline");
+    else if (action === "app filter")
+      await page
+        .getByRole("combobox", { name: "App", exact: true })
+        .selectOption("~unknown");
+    else if (action === "environment filter")
+      await page
+        .getByRole("combobox", { name: "Environment", exact: true })
+        .selectOption("staging");
     else
       await page.getByRole("button", { name: "30 days", exact: true }).click();
     await expect(

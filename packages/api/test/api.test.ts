@@ -11,7 +11,7 @@ beforeEach(async () => {
   storage = await database();
   env = {
     DB: storage.db,
-    SITES: { skyline: [origin] },
+    SITES: { skyline: { [origin]: "production" } },
     INGEST_LIMITER: { limit: async () => ({ success: true }) },
   };
 });
@@ -60,7 +60,7 @@ test("rejects foreign origins, unknown sites, missing origin and cross-site impe
   expect(
     (await ingest(request({ site: "other", events: [event()] }), env)).status,
   ).toBe(403);
-  env.SITES.other = ["https://other.example"];
+  env.SITES.other = { "https://other.example": "production" };
   expect(
     (await ingest(request({ site: "other", events: [event()] }), env)).status,
   ).toBe(403);
@@ -138,7 +138,7 @@ test("accepts case-insensitive media types and rejects invalid configured site n
   const valid = request({ site: "skyline", events: [event()] });
   valid.headers.set("Content-Type", "Application/JSON; charset=utf-8");
   expect((await ingest(valid, env)).status).toBe(202);
-  env.SITES.Invalid_Site = [origin];
+  env.SITES.Invalid_Site = { [origin]: "production" };
   expect(
     (await ingest(request({ site: "Invalid_Site", events: [event()] }), env))
       .status,
@@ -211,7 +211,7 @@ test("public admin is read-only and aggregates actual SQLite rows", async () => 
 
 test("pagination has no gaps or repeats for tied timestamps across sites", async () => {
   const now = Date.now();
-  env.SITES.other = [origin];
+  env.SITES.other = { [origin]: "production" };
   const ids = Array.from({ length: 60 }, () => crypto.randomUUID());
   for (const site of ["skyline", "other"])
     for (const id of ids)

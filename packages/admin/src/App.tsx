@@ -10,6 +10,8 @@ type Report = {
   query: string;
   site: string;
   days: number;
+  app: string;
+  environment: string;
   updated: number;
 } & (
   | { view: "overview"; summary: Summary }
@@ -25,6 +27,21 @@ export function App() {
   const [site, setSite] = useState(
     () => new URLSearchParams(location.search).get("site") ?? "",
   );
+  const [apps, setApps] = useState<string[]>([]);
+  const [app, setApp] = useState(() => {
+    const value = new URLSearchParams(location.search).get("app") ?? "";
+    return value === "~unknown" || /^[a-z0-9][a-z0-9-]{0,63}$/.test(value)
+      ? value
+      : "";
+  });
+  const [environment, setEnvironment] = useState(() => {
+    const value = new URLSearchParams(location.search).get("environment") ?? "";
+    return value === "all"
+      ? ""
+      : ["production", "staging", "~unknown"].includes(value)
+        ? value
+        : "production";
+  });
   const [days, setDays] = useState(() => {
     const value = Number(new URLSearchParams(location.search).get("days"));
     return [1, 7, 30, 90].includes(value) ? value : 7;
@@ -35,6 +52,9 @@ export function App() {
   const active = useRef<AbortController | null>(null);
   const filters = new URLSearchParams();
   if (site) filters.set("site", site);
+  if (app) filters.set("app", app);
+  if (environment !== "production")
+    filters.set("environment", environment || "all");
   if (days !== 7) filters.set("days", String(days));
   const encodedFilters = filters.toString();
   const search = encodedFilters ? `?${encodedFilters}` : "";
@@ -54,7 +74,9 @@ export function App() {
     setData((current) =>
       current?.view === "overview" &&
       current.site === site &&
-      current.days === days
+      current.days === days &&
+      current.app === app &&
+      current.environment === environment
         ? current
         : null,
     );
@@ -62,6 +84,8 @@ export function App() {
     const from = to - days * 86_400_000;
     const query = new URLSearchParams({
       site,
+      app,
+      environment,
       from: new Date(from).toISOString(),
       to: new Date(to).toISOString(),
     }).toString();
@@ -74,18 +98,29 @@ export function App() {
           : getData<Events>(`/api/events?${query}`, controller.signal).then(
               (events) => ({ view: "recent" as const, events }),
             );
-      const metadata = getData<{ sites: string[] }>(
+      const metadata = getData<{ sites: string[]; apps: string[] }>(
         "/api/sites",
         controller.signal,
       ).then((result) => {
         if (!controller.signal.aborted) {
           setSites(result.sites);
+          setApps(result.apps ?? []);
           if (site && !result.sites.includes(site)) setSite("");
         }
       });
       const [result] = await Promise.all([report, metadata]);
       if (controller.signal.aborted) return;
-      setData({ ...result, from, to, query, site, days, updated: Date.now() });
+      setData({
+        ...result,
+        from,
+        to,
+        query,
+        site,
+        app,
+        environment,
+        days,
+        updated: Date.now(),
+      });
     } catch (cause) {
       if (!controller.signal.aborted)
         setError(
@@ -94,7 +129,7 @@ export function App() {
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [site, days, view]);
+  }, [site, app, environment, days, view]);
 
   useEffect(() => {
     void refresh();
@@ -185,6 +220,38 @@ export function App() {
               {sites.map((name) => (
                 <option key={name}>{name}</option>
               ))}
+            </select>
+          </label>
+          <label>
+            App
+            <select
+              value={app}
+              onChange={(event) => setApp(event.target.value)}
+            >
+              <option value="">All apps</option>
+              <option value="~unknown">Unknown app</option>
+              {[
+                ...new Set([
+                  ...apps,
+                  ...(app && app !== "~unknown" ? [app] : []),
+                ]),
+              ]
+                .sort()
+                .map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+            </select>
+          </label>
+          <label>
+            Environment
+            <select
+              value={environment}
+              onChange={(event) => setEnvironment(event.target.value)}
+            >
+              <option value="">All environments</option>
+              <option value="production">Production</option>
+              <option value="staging">Staging</option>
+              <option value="~unknown">Unknown environment</option>
             </select>
           </label>
           <fieldset>

@@ -6,7 +6,7 @@ shows activity. A shared browser extension disables CT in Chrome and Firefox.
 
 - API: https://ct.a2f0.net
 - Dashboard: https://ct-admin.a2f0.net
-- First integration: Skyline
+- Integrations: Skyline, a2f0.net, devopsrockstars.com, and Balebase (production and staging)
 
 ## Workspaces
 
@@ -49,11 +49,13 @@ import { createTracker } from '@a2f0/ct-client';
 
 const clicks = createTracker({
   site: 'skyline',
+  app: 'skyline',
+  environment: 'production',
   capture: 'all',
   page: () => '/skyline-3d', // a stable route name, without record IDs or tokens
 });
 
-// Call only from your production browser bootstrap, behind an exact origin guard.
+// Call only from your registered production or staging browser bootstrap, behind an exact origin guard.
 clicks.init();
 ```
 

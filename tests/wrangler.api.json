@@ -14,8 +14,17 @@
     {
       "name": "INGEST_LIMITER",
       "namespace_id": "782003",
-      "simple": { "limit": 1000, "period": 60 }
+      "simple": {
+        "limit": 1000,
+        "period": 60
+      }
     }
   ],
-  "vars": { "SITES": { "skyline": ["http://127.0.0.1:4174"] } }
+  "vars": {
+    "SITES": {
+      "skyline": {
+        "http://127.0.0.1:4174": "production"
+      }
+    }
+  }
 }

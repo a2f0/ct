@@ -12,6 +12,8 @@ const location = {
 };
 const event: ClickRow = {
   site: "skyline",
+  app: null,
+  environment: "production",
   id: "00000000-0000-4000-8000-000000000001",
   timestamp: Date.now(),
   page: "/",
@@ -25,6 +27,8 @@ const summary: Summary = {
   daily: [],
   pages: [{ site: "skyline", page: "/", clicks: 3 }],
   targets: [{ target: "button", label: "skyline.wireframe", clicks: 3 }],
+  apps: [{ app: null, clicks: 3 }],
+  environments: [{ environment: "production", clicks: 3 }],
   geography: {
     countries: [
       { country: "US", clicks: 2 },

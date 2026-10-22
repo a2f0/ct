@@ -245,6 +245,7 @@ h1 span {
   flex-wrap: wrap;
 }
 .filters label {
+  max-width: 100%;
   display: flex;
   gap: 10px;
   align-items: center;
@@ -252,6 +253,8 @@ h1 span {
   font-size: 12px;
 }
 select {
+  min-width: 0;
+  max-width: 220px;
   background: var(--surface);
   border: 1px solid var(--line);
   padding: 9px 27px 9px 12px;

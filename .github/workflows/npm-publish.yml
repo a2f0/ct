@@ -29,6 +29,10 @@ jobs:
       - if: steps.version.outputs.publish == 'true'
         run: bun install --frozen-lockfile && bun run check && bun run test && bun run build && bun run package:smoke
       - if: steps.version.outputs.publish == 'true'
+        name: Wait for deployed collector protocol and origins
+        timeout-minutes: 12
+        run: bun scripts/collectorReady.ts
+      - if: steps.version.outputs.publish == 'true'
         working-directory: packages/client
         run: |
           mkdir -p ../../dist

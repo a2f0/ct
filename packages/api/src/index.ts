@@ -4,12 +4,13 @@ import { normalizeTimes, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
-  if (path === "/health" && request.method === "GET") return json({ ok: true });
+  if (path === "/health" && request.method === "GET")
+    return json({ ok: true, protocolVersion: 2 });
   if (path !== "/v1/clicks") return json({ error: "Not found" }, 404);
   const origin = request.headers.get("Origin");
   if (
     !origin ||
-    !Object.values(env.SITES).some((origins) => origins.includes(origin))
+    !Object.values(env.SITES).some((origins) => Object.hasOwn(origins, origin))
   )
     return json({ error: "Origin not allowed" }, 403);
   const cors = {
@@ -56,14 +57,17 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
   }
   if (!body || typeof body !== "object")
     return json({ error: "Invalid batch" }, 400, cors);
-  const { site, events } = body as Record<string, unknown>;
+  const { site, events, environment } = body as Record<string, unknown>;
   if (
     typeof site !== "string" ||
     !/^[a-z0-9][a-z0-9-]{0,63}$/.test(site) ||
     !Object.hasOwn(env.SITES, site) ||
-    !env.SITES[site]?.includes(origin)
+    !Object.hasOwn(env.SITES[site] ?? {}, origin)
   )
     return json({ error: "Site not allowed" }, 403, cors);
+  const resolvedEnvironment = env.SITES[site]?.[origin];
+  if (environment !== undefined && environment !== resolvedEnvironment)
+    return json({ error: "Environment does not match site origin" }, 400, cors);
   const now = Date.now();
   if (
     !Array.isArray(events) ||
@@ -84,19 +88,19 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
           "INSERT INTO locations (location_key, continent, country, region, region_code, city, timezone) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(location_key) DO NOTHING",
         ).bind(location.key, ...location.values),
       );
-    // Ten rows use 90 bindings (D1 permits 100 per statement), and a full
-    // 50-event delivery uses at most six statements including the location.
-    for (let offset = 0; offset < normalized.length; offset += 10) {
-      const chunk = normalized.slice(offset, offset + 10);
+    // Nine rows use 99 bindings (D1 permits 100 per statement), and a full
+    // 50-event delivery uses at most seven statements including the location.
+    for (let offset = 0; offset < normalized.length; offset += 9) {
+      const chunk = normalized.slice(offset, offset + 9);
       const placeholders = chunk
         .map(
           () =>
-            "(?, ?, ?, ?, ?, ?, ?, ?, (SELECT id FROM locations WHERE location_key = ?))",
+            "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT id FROM locations WHERE location_key = ?))",
         )
         .join(", ");
       statements.push(
         env.DB.prepare(
-          `INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, ip_address, location_id) VALUES ${placeholders} ON CONFLICT(site, id) DO NOTHING`,
+          `INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, app, environment, ip_address, location_id) VALUES ${placeholders} ON CONFLICT(site, id) DO NOTHING`,
         ).bind(
           ...chunk.flatMap((event) => [
             site,
@@ -106,6 +110,8 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
             event.page,
             event.target,
             event.label,
+            event.app ?? null,
+            resolvedEnvironment ?? null,
             location.ip,
             location.key,
           ]),

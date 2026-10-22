@@ -2,14 +2,16 @@
 
 Framework-free, batched click tracking. Importing or constructing a tracker starts
 no listeners, timers, storage writes, or requests. Call init explicitly in the
-production browser bootstrap; keep that call out of shared components and tests.
+deployed browser bootstrap; keep that call out of shared components and tests.
 
 Install with `bun add @a2f0/ct-client` or `npm install @a2f0/ct-client`.
 
 ```ts
 import { createTracker } from '@a2f0/ct-client';
 const tracker = createTracker({
-  site: 'skyline',
+  site: 'a2f0-net',
+  app: 'desktop',
+  environment: 'production',
   capture: 'all',
   page: () => '/skyline-3d',
 });
@@ -22,7 +24,7 @@ tracker.destroy();
 The site must be registered with its exact origin at the API. The default endpoint
 is https://ct.a2f0.net/v1/clicks. Browser ESM is self-contained; TypeScript types
 are included. There are no runtime dependencies.
-init throws for an invalid site name or endpoint URL, before adding listeners.
+init throws for an invalid site/app name, environment, or endpoint URL, before adding listeners.
 Validate configuration before initializing the tracker.
 
 ## Options
@@ -30,6 +32,8 @@ Validate configuration before initializing the tracker.
 | Option | Default | Behavior |
 | --- | --- | --- |
 | site | Required | Public site identifier, lowercase letters/numbers/hyphens |
+| app | null | Default app slug, lowercase letters/numbers/hyphens, 1–64 characters |
+| environment | Inferred by server | production or staging; must match registered site and exact origin |
 | page | () => '/' | Stable route template, maximum 200 characters |
 | capture | interactive | all elements, interactive controls, or marked elements |
 | batchSize | 20 | 1–50 clicks per request |
@@ -43,6 +47,21 @@ capture values are 'all', 'interactive', and 'marked'. Assign a stable label wit
 data-ct="open-building". Never put user content in this attribute. Use
 data-ct-ignore on an element or ancestor to exclude a subtree. Inputs, textareas,
 selects, and editable content are always excluded. Open shadow DOM and SVG work.
+
+Wrap an embedded app with `data-ct-app="skyline"`. The nearest such attribute in
+the click's composed path overrides the tracker default, including unlabeled
+canvas clicks inside an open shadow root. An invalid or empty nearest attribute
+produces null instead of inheriting another app. Use one tracker per hosting
+website; the site remains `a2f0-net` while its desktop, Skyline and other embedded
+apps get separate app values. Closed shadow roots expose only their host, and
+cross-origin iframe clicks require a tracker inside that frame.
+
+Environment is fixed per tracker and sent once per batch. The collector derives
+it from the registered site and exact request Origin; an explicit mismatched
+value rejects the entire batch. Old clients may omit both dimensions: app is
+null and environment is inferred. Never put user data in app names. Initialize
+only on deliberately registered production or staging origins, never on local,
+preview, test or automated pages.
 
 Only trusted clicks are captured. init is idempotent and returns whether capture
 is currently allowed. destroy removes listeners, aborts requests, and discards

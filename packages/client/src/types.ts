@@ -4,11 +4,16 @@ export interface ClickEvent {
   page: string;
   target: string;
   label: string | null;
+  app: string | null;
 }
 
 export interface TrackerOptions {
   /** Public site identifier registered by the ingestion API. */
   site: string;
+  /** Stable app slug; nearest data-ct-app overrides it per click. */
+  app?: string;
+  /** Must match the environment registered for this site and exact origin. */
+  environment?: "production" | "staging";
   endpoint?: string;
   /** Return a route template, never a URL containing user data. Defaults to "/". */
   page?: () => string;

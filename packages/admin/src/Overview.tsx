@@ -64,6 +64,45 @@ export function Overview({
           </p>
         )}
       </section>
+      <div className="two-column">
+        {[
+          {
+            title: "Apps",
+            rows: summary?.apps?.map((row) => ({
+              name: row.app,
+              clicks: row.clicks,
+            })),
+          },
+          {
+            title: "Environments",
+            rows: summary?.environments?.map((row) => ({
+              name: row.environment,
+              clicks: row.clicks,
+            })),
+          },
+        ].map(({ title, rows }) => (
+          <section className="card" aria-label={title} key={title}>
+            <div className="card-heading">
+              <h2>{title}</h2>
+              <span className="muted">CLICKS</span>
+            </div>
+            <div className="rankings">
+              {rows?.map((row) => (
+                <div className="rank" key={row.name ?? "~unknown"}>
+                  <span className="target-icon">↖</span>
+                  <strong>{row.name ?? "Unknown"}</strong>
+                  <b>{count(row.clicks)}</b>
+                </div>
+              ))}
+              {!rows?.length && (
+                <p className="empty-small">
+                  {loading ? "Loading activity…" : "No activity in this range."}
+                </p>
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
       <Geography geography={summary?.geography} loading={loading} />
       <div className="two-column">
         <section className="card">

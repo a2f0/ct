@@ -1,12 +1,15 @@
+export type Environment = "production" | "staging";
+export type Sites = Record<string, Record<string, Environment>>;
+
 export interface Env {
   DB: D1Database;
-  SITES: Record<string, string[]>;
+  SITES: Sites;
   INGEST_LIMITER: RateLimit;
 }
 
 export interface AdminEnv {
   DB: D1Database;
-  SITES: Record<string, string[]>;
+  SITES: Sites;
   ASSETS: Fetcher;
   READ_LIMITER: RateLimit;
 }

@@ -3,6 +3,8 @@ export interface Summary {
   daily: { day: string; clicks: number }[];
   pages: { site: string; page: string; clicks: number }[];
   targets: { target: string; label: string | null; clicks: number }[];
+  apps: { app: string | null; clicks: number }[];
+  environments: { environment: string | null; clicks: number }[];
   geography: {
     countries: { country: string | null; clicks: number }[];
     regions: {
@@ -23,6 +25,8 @@ export interface Summary {
 
 export interface ClickRow {
   site: string;
+  app: string | null;
+  environment: string | null;
   id: string;
   timestamp: number;
   page: string;
