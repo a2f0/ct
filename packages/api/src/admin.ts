@@ -11,6 +11,11 @@ export async function admin(
   if (!url.pathname.startsWith("/api/")) {
     const asset = await env.ASSETS.fetch(request);
     const response = new Response(asset.body, asset);
+    if (response.headers.get("Content-Type")?.includes("text/html"))
+      response.headers.set(
+        "Cache-Control",
+        `${asset.headers.get("Cache-Control") ?? "public, max-age=0, must-revalidate"}, no-transform`,
+      );
     response.headers.set(
       "Content-Security-Policy",
       "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",

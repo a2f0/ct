@@ -348,3 +348,43 @@ test("daily retention removes only events older than 90 days", async () => {
     storage.sqlite.query("SELECT COUNT(*) AS count FROM clicks").get(),
   ).toEqual({ count: 1 });
 });
+
+test("HTML disables injected analytics while static scripts retain their cache policy", async () => {
+  const configured = adminEnv();
+  configured.ASSETS = {
+    fetch: async (request: Request) => {
+      const html = new URL(request.url).pathname === "/";
+      return new Response(
+        html ? "<!doctype html><title>CT</title>" : "export {};",
+        {
+          headers: {
+            "Content-Type": html
+              ? "text/html; charset=utf-8"
+              : "application/javascript",
+            "Cache-Control": html
+              ? "public, max-age=0, must-revalidate"
+              : "public, max-age=31536000, immutable",
+          },
+        },
+      );
+    },
+  } as unknown as Fetcher;
+  const html = await admin(
+    new Request("https://ct-admin.a2f0.net/"),
+    configured,
+  );
+  expect(html.headers.get("Cache-Control")).toBe(
+    "public, max-age=0, must-revalidate, no-transform",
+  );
+  expect(html.headers.get("Content-Security-Policy")).toContain(
+    "script-src 'self'",
+  );
+  const script = await admin(
+    new Request("https://ct-admin.a2f0.net/app.js"),
+    configured,
+  );
+  expect(script.headers.get("Cache-Control")).toBe(
+    "public, max-age=31536000, immutable",
+  );
+  expect(await script.text()).toBe("export {};");
+});

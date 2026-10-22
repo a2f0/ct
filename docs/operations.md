@@ -27,6 +27,10 @@ on the admin host, and a 405 for POST /api/events. Do not generate production cl
 as part of normal tests. A consumer's origin must be listed under its site key in
 both configs. Public site identifiers are not credentials.
 
+Dashboard HTML uses Cache-Control: no-transform to prevent Cloudflare's automatic
+Web Analytics beacon injection, while the CSP permits only our own scripts.
+This follows Cloudflare's [Web Analytics setup guidance](https://developers.cloudflare.com/web-analytics/get-started/).
+
 ## API
 
 POST https://ct.a2f0.net/v1/clicks accepts text/plain JSON or application/json with

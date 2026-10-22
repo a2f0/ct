@@ -56,4 +56,4 @@ jobs:
         with:
           node-version: 24.22.1
           package-manager-cache: false
-      - run: npm publish dist/*.tgz --access public --ignore-scripts
+      - run: npm publish ./dist/*.tgz --access public --ignore-scripts
