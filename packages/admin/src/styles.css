@@ -128,7 +128,7 @@ main {
   padding: 0 42px;
   max-width: 1700px;
   width: 100%;
-  margin: auto;
+  margin: 0 auto;
 }
 .topbar {
   display: flex;
@@ -445,6 +445,18 @@ td {
   padding: 8px 15px;
   font-size: 12px;
 }
+.pagination {
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pagination .load-more {
+  margin: 12px auto;
+}
+.pagination-error {
+  color: #7c342a;
+}
 .empty-small,
 .placeholder {
   padding: 25px;
@@ -528,6 +540,8 @@ footer .muted {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
   }
   .brand {
     font-size: 32px;
@@ -538,12 +552,17 @@ footer .muted {
     font-size: 27px;
   }
   .sidebar-caption,
-  .sidebar-bottom,
-  .sidebar nav a:not(.nav-active) {
+  .sidebar-bottom {
     display: none;
   }
-  .sidebar nav .nav-active {
-    padding: 8px 13px;
+  .sidebar nav {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .sidebar nav a {
+    gap: 6px;
+    padding: 8px 10px;
     font-size: 12px;
   }
   .topbar {

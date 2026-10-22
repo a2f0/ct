@@ -1,23 +1,41 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Chart } from "./Chart";
-import { count, type Events, getData, type Summary, time } from "./data";
+import { type Events, getData, type Summary } from "./data";
+import { Overview } from "./Overview";
+import { RecentClicks } from "./RecentClicks";
+
+type Report = { from: number; to: number; query: string } & (
+  | { view: "overview"; summary: Summary }
+  | { view: "recent"; events: Events }
+);
 
 export function App() {
+  // Native links give both views direct URLs, reloads, and browser history.
+  const view = /^\/recent\/?$/.test(window.location.pathname)
+    ? "recent"
+    : "overview";
   const [sites, setSites] = useState<string[]>([]);
-  const [site, setSite] = useState("");
-  const [days, setDays] = useState(7);
-  const [data, setData] = useState<{
-    summary: Summary;
-    events: Events;
-    from: number;
-    to: number;
-    query: string;
-  } | null>(null);
+  const [site, setSite] = useState(
+    () => new URLSearchParams(location.search).get("site") ?? "",
+  );
+  const [days, setDays] = useState(() => {
+    const value = Number(new URLSearchParams(location.search).get("days"));
+    return [1, 7, 30, 90].includes(value) ? value : 7;
+  });
+  const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updated, setUpdated] = useState<number | null>(null);
-  const [paging, setPaging] = useState(false);
   const active = useRef<AbortController | null>(null);
+  const filters = new URLSearchParams();
+  if (site) filters.set("site", site);
+  if (days !== 7) filters.set("days", String(days));
+  const search = filters.size ? `?${filters}` : "";
+  const href = (path: string) => `${path}${search}`;
+
+  useEffect(() => {
+    document.title = `${view === "overview" ? "Overview" : "Recent clicks"} · CT`;
+    history.replaceState(null, "", `${location.pathname}${search}`);
+  }, [view, search]);
 
   const refresh = useCallback(async () => {
     active.current?.abort();
@@ -25,7 +43,8 @@ export function App() {
     active.current = controller;
     setLoading(true);
     setError("");
-    setPaging(false);
+    setData(null);
+    setUpdated(null);
     const to = Date.now();
     const from = to - days * 86_400_000;
     const query = new URLSearchParams({
@@ -34,14 +53,23 @@ export function App() {
       to: new Date(to).toISOString(),
     }).toString();
     try {
-      const [summary, events, metadata] = await Promise.all([
-        getData<Summary>(`/api/summary?${query}`, controller.signal),
-        getData<Events>(`/api/events?${query}`, controller.signal),
-        getData<{ sites: string[] }>("/api/sites", controller.signal),
-      ]);
+      const report =
+        view === "overview"
+          ? getData<Summary>(`/api/summary?${query}`, controller.signal).then(
+              (summary) => ({ view: "overview" as const, summary }),
+            )
+          : getData<Events>(`/api/events?${query}`, controller.signal).then(
+              (events) => ({ view: "recent" as const, events }),
+            );
+      const metadata = getData<{ sites: string[] }>(
+        "/api/sites",
+        controller.signal,
+      ).then((result) => {
+        if (!controller.signal.aborted) setSites(result.sites);
+      });
+      const [result] = await Promise.all([report, metadata]);
       if (controller.signal.aborted) return;
-      setSites(metadata.sites);
-      setData({ summary, events, from, to, query });
+      setData({ ...result, from, to, query });
       setUpdated(Date.now());
     } catch (cause) {
       if (!controller.signal.aborted)
@@ -51,43 +79,12 @@ export function App() {
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [site, days]);
+  }, [site, days, view]);
 
   useEffect(() => {
     void refresh();
     return () => active.current?.abort();
   }, [refresh]);
-
-  async function loadMore() {
-    if (!data?.events.nextCursor || paging) return;
-    const snapshot = data;
-    const signal = active.current?.signal;
-    setPaging(true);
-    try {
-      const next = await getData<Events>(
-        `/api/events?${data.query}&cursor=${encodeURIComponent(data.events.nextCursor)}`,
-        signal,
-      );
-      setData((current) =>
-        current === snapshot
-          ? {
-              ...current,
-              events: {
-                events: [...current.events.events, ...next.events],
-                nextCursor: next.nextCursor,
-              },
-            }
-          : current,
-      );
-    } catch (cause) {
-      if (!signal?.aborted)
-        setError(
-          cause instanceof Error ? cause.message : "Unable to load more.",
-        );
-    } finally {
-      if (!signal?.aborted) setPaging(false);
-    }
-  }
 
   return (
     <div className="shell">
@@ -104,11 +101,19 @@ export function App() {
           CLEARER PICTURE.
         </p>
         <nav aria-label="Main">
-          <a className="nav-active" href="#overview">
-            <span>▥</span> Overview <span className="nav-arrow">↗</span>
+          <a
+            className={view === "overview" ? "nav-active" : undefined}
+            aria-current={view === "overview" ? "page" : undefined}
+            href={href("/")}
+          >
+            <span aria-hidden="true">▥</span> Overview
           </a>
-          <a href="#recent">
-            <span>≡</span> Recent clicks
+          <a
+            className={view === "recent" ? "nav-active" : undefined}
+            aria-current={view === "recent" ? "page" : undefined}
+            href={href("/recent")}
+          >
+            <span aria-hidden="true">≡</span> Recent clicks
           </a>
         </nav>
         <div className="sidebar-bottom">
@@ -120,18 +125,25 @@ export function App() {
           </p>
         </div>
       </aside>
-      <main id="overview">
+      <main>
         <header className="topbar">
           <span>WORKSPACE / ANALYTICS</span>
           <span className="pill">90-day retention</span>
         </header>
         <section className="heading">
           <div>
-            <p className="eyebrow">THE BIG PICTURE</p>
+            <p className="eyebrow">
+              {view === "overview" ? "THE BIG PICTURE" : "EVERY INTERACTION"}
+            </p>
             <h1>
-              Click activity<span>.</span>
+              {view === "overview" ? "Click activity" : "Recent clicks"}
+              <span>.</span>
             </h1>
-            <p className="subtitle">A little signal from every interaction.</p>
+            <p className="subtitle">
+              {view === "overview"
+                ? "A little signal from every interaction."
+                : "Explore clicks as they happened. Scroll for older activity."}
+            </p>
           </div>
           <button
             className="refresh"
@@ -148,7 +160,6 @@ export function App() {
             <select
               value={site}
               onChange={(event) => {
-                setData(null);
                 setSite(event.target.value);
               }}
             >
@@ -167,7 +178,6 @@ export function App() {
                 className={days === value ? "selected" : ""}
                 aria-pressed={days === value}
                 onClick={() => {
-                  setData(null);
                   setDays(value);
                 }}
               >
@@ -189,160 +199,24 @@ export function App() {
             </button>
           </div>
         )}
-        <div className="metrics" aria-busy={loading}>
-          {[
-            [
-              "Total clicks",
-              data?.summary.totals.clicks,
-              "Every recorded interaction",
-            ],
-            [
-              "Active sites",
-              data?.summary.totals.sites,
-              "Sites with clicks in this range",
-            ],
-            [
-              "Pages clicked",
-              data?.summary.totals.pages,
-              "Distinct site and route pairs",
-            ],
-          ].map(([label, value, caption]) => (
-            <section className="metric" key={label}>
-              <p>{label}</p>
-              <strong>{typeof value === "number" ? count(value) : "—"}</strong>
-              <span>{caption}</span>
-            </section>
-          ))}
-        </div>
-        <section className="card trend">
-          <div className="card-heading">
-            <div>
-              <h2>Activity over time</h2>
-              <p>Daily clicks · UTC</p>
-            </div>
-            <span className="chart-key">
-              <i /> Clicks
-            </span>
+        {view === "overview" ? (
+          <Overview
+            summary={data?.view === "overview" ? data.summary : null}
+            from={data?.from ?? 0}
+            to={data?.to ?? 0}
+            loading={loading}
+          />
+        ) : data?.view === "recent" ? (
+          <RecentClicks
+            key={data.query}
+            initial={data.events}
+            query={data.query}
+          />
+        ) : (
+          <div className="card placeholder" role="status">
+            {loading ? "Loading recent clicks…" : "Recent clicks unavailable"}
           </div>
-          {data ? (
-            <Chart days={data.summary.daily} from={data.from} to={data.to} />
-          ) : (
-            <div className="placeholder">
-              {loading ? "Loading activity…" : "Activity unavailable"}
-            </div>
-          )}
-          {data?.summary.totals.clicks === 0 && (
-            <p className="empty-note">
-              No clicks in this range. New activity will appear after a site
-              initializes the tracker.
-            </p>
-          )}
-        </section>
-        <div className="two-column">
-          <section className="card">
-            <div className="card-heading">
-              <h2>Top pages</h2>
-              <span className="muted">CLICKS</span>
-            </div>
-            <div className="rankings">
-              {data?.summary.pages.map((page, index) => (
-                <div className="rank" key={`${page.site}:${page.page}`}>
-                  <span className="rank-number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <strong>{page.page}</strong>
-                    <small>{page.site}</small>
-                  </div>
-                  <b>{count(page.clicks)}</b>
-                </div>
-              ))}
-              {!data?.summary.pages.length && (
-                <p className="empty-small">No page activity yet.</p>
-              )}
-            </div>
-          </section>
-          <section className="card">
-            <div className="card-heading">
-              <h2>What gets clicked</h2>
-              <span className="muted">CLICKS</span>
-            </div>
-            <div className="rankings">
-              {data?.summary.targets.map((target) => (
-                <div
-                  className="rank"
-                  key={JSON.stringify([target.target, target.label])}
-                >
-                  <span className="target-icon">↖</span>
-                  <div>
-                    <strong>{target.label ?? target.target}</strong>
-                    <small>
-                      {target.label ? target.target : "Element type"}
-                    </small>
-                  </div>
-                  <b>{count(target.clicks)}</b>
-                </div>
-              ))}
-              {!data?.summary.targets.length && (
-                <p className="empty-small">No targets recorded yet.</p>
-              )}
-            </div>
-          </section>
-        </div>
-        <section className="card recent" id="recent">
-          <div className="card-heading">
-            <div>
-              <h2>Recent clicks</h2>
-              <p>A closer look at the latest activity.</p>
-            </div>
-            <span className="pill">UTC</span>
-          </div>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Time</th>
-                  <th scope="col">Site</th>
-                  <th scope="col">Page</th>
-                  <th scope="col">Target</th>
-                  <th scope="col">Label</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.events.events.map((event) => (
-                  <tr key={`${event.site}:${event.id}`}>
-                    <td>
-                      <time dateTime={new Date(event.timestamp).toISOString()}>
-                        {time(event.timestamp)}
-                      </time>
-                    </td>
-                    <td>{event.site}</td>
-                    <td className="path">{event.page}</td>
-                    <td>
-                      <span className="tag">{event.target}</span>
-                    </td>
-                    <td>{event.label ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!data?.events.events.length && (
-            <p className="empty-small">
-              {loading ? "Loading recent clicks…" : "No clicks to show."}
-            </p>
-          )}
-          {data?.events.nextCursor && (
-            <button
-              className="load-more"
-              disabled={paging || loading}
-              type="button"
-              onClick={() => void loadMore()}
-            >
-              {paging ? "Loading…" : "Load 100 more"}
-            </button>
-          )}
-        </section>
+        )}
         <footer>
           <span>
             ct. <span className="muted">Keep it simple. Make it count.</span>
