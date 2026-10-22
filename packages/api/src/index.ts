@@ -75,9 +75,6 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
   const normalized = normalizeTimes(events, now);
   if (!normalized)
     return json({ error: "Inconsistent event timestamps" }, 400, cors);
-  const statement = env.DB.prepare(
-    "INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, ip_address, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT id FROM locations WHERE location_key = ?)) ON CONFLICT(site, id) DO NOTHING",
-  );
   const location = requestLocation(request);
   try {
     const statements: D1PreparedStatement[] = [];
@@ -87,21 +84,34 @@ export async function ingest(request: Request, env: Env): Promise<Response> {
           "INSERT INTO locations (location_key, continent, country, region, region_code, city, timezone) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(location_key) DO NOTHING",
         ).bind(location.key, ...location.values),
       );
-    statements.push(
-      ...normalized.map((event) =>
-        statement.bind(
-          site,
-          event.id.toLowerCase(),
-          event.timestamp,
-          now,
-          event.page,
-          event.target,
-          event.label,
-          location.ip,
-          location.key,
+    // Ten rows use 90 bindings (D1 permits 100 per statement), and a full
+    // 50-event delivery uses at most six statements including the location.
+    for (let offset = 0; offset < normalized.length; offset += 10) {
+      const chunk = normalized.slice(offset, offset + 10);
+      const placeholders = chunk
+        .map(
+          () =>
+            "(?, ?, ?, ?, ?, ?, ?, ?, (SELECT id FROM locations WHERE location_key = ?))",
+        )
+        .join(", ");
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, ip_address, location_id) VALUES ${placeholders} ON CONFLICT(site, id) DO NOTHING`,
+        ).bind(
+          ...chunk.flatMap((event) => [
+            site,
+            event.id.toLowerCase(),
+            event.timestamp,
+            now,
+            event.page,
+            event.target,
+            event.label,
+            location.ip,
+            location.key,
+          ]),
         ),
-      ),
-    );
+      );
+    }
     await env.DB.batch(statements);
   } catch {
     return json({ error: "Storage temporarily unavailable" }, 503, cors);

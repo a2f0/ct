@@ -5,8 +5,9 @@ public event field is visible there; consumers must pass stable, non-sensitive l
 and route templates. Authentication can be added later without changing ingestion.
 
 Each row contains the public site name, a random per-event UUID, the click time,
-normalized page name, element tag, and optional explicit
-data-ct label. The SDK creates no separate visitor or session identifier. It never reads text,
+normalized page name, element tag, optional explicit data-ct label, request IP,
+and a reference to the shared location record described below. The SDK creates
+no separate visitor or session identifier. It never reads text,
 href, class, DOM ID, form values, query strings, fragments, or referrers. It sends
 no cookies. Route names are supplied by the consumer, with '/' as the default.
 Server receipt times are stored internally but excluded from the public API and

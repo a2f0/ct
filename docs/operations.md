@@ -42,6 +42,9 @@ A batch requiring correction and spanning more than 24 hours is rejected as
 inconsistent. Duplicate (site, id) pairs are ignored;
 accepted counts acknowledged events, including retries already stored.
 Rate limits allow approximately 120 batches/minute/IP per Cloudflare location.
+Inserts use up to ten clicks per statement (90 bindings), so a full 50-click
+batch plus its location uses six statements in a single atomic D1 batch. This
+stays below D1's 100-parameter limit and its free-plan query budget.
 
 The admin Worker exposes GET /api/sites, /api/summary and /api/events. Optional site,
 from and to filters apply to both data endpoints; dates are ISO timestamps, from

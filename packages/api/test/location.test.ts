@@ -258,7 +258,10 @@ test("a failing click rolls back both the location and every click in its batch"
   expect(
     (
       await ingest(
-        request([click(), { ...click(), label: "reject-click" }]),
+        request([
+          ...Array.from({ length: 10 }, click),
+          { ...click(), label: "reject-click" },
+        ]),
         env,
       )
     ).status,

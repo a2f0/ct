@@ -79,7 +79,7 @@ select:focus-visible {
   letter-spacing: 0;
 }
 .brand-dot {
-  color: var(--lime);
+  color: var(--accent);
 }
 .sidebar-caption {
   color: var(--sidebar-muted);
@@ -118,7 +118,7 @@ select:focus-visible {
   display: inline-block;
   width: 6px;
   height: 6px;
-  background: var(--lime);
+  background: var(--accent);
   border-radius: 50%;
   margin-right: 7px;
 }

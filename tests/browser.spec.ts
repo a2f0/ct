@@ -8,6 +8,41 @@ declare global {
   }
 }
 
+test("a full 50-click delivery round-trips through the real Worker and migrated D1", async ({
+  request,
+}) => {
+  const events = Array.from({ length: 50 }, () => ({
+    id: crypto.randomUUID(),
+    timestamp: Date.now(),
+    page: "/batch-test",
+    target: "button",
+    label: "full-batch",
+  }));
+  const response = await request.post("http://127.0.0.1:4175/v1/clicks", {
+    headers: {
+      Origin: "http://127.0.0.1:4174",
+      "CF-Connecting-IP": "203.0.113.10",
+    },
+    data: { site: "skyline", events },
+  });
+  expect(response.status()).toBe(202);
+  const result = await request.get(
+    "http://127.0.0.1:4176/api/events?site=skyline",
+  );
+  expect(result.status()).toBe(200);
+  const ids = new Set<string>(events.map((event) => event.id));
+  const stored = (await result.json()).events.filter((event: { id: string }) =>
+    ids.has(event.id),
+  );
+  expect(stored).toHaveLength(50);
+  expect(
+    stored.every(
+      (event: { ip: string | null; location: unknown }) =>
+        Object.hasOwn(event, "ip") && Object.hasOwn(event, "location"),
+    ),
+  ).toBe(true);
+});
+
 test("inert before init and blocked in automated browsers", async ({
   page,
 }) => {
