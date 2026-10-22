@@ -2,13 +2,14 @@ export const OPT_OUT_KEY = "ct:opt-out";
 export const OPT_OUT_EVENT = "ct:opt-out-change";
 export const EXTENSION_ATTRIBUTE = "data-ct-disabled";
 
-export function optedOut(): boolean {
+export function optedOut(overrideGpc = false): boolean {
   try {
     return (
       navigator.webdriver === true ||
       navigator.doNotTrack === "1" ||
-      (navigator as Navigator & { globalPrivacyControl?: boolean })
-        .globalPrivacyControl === true ||
+      (!overrideGpc &&
+        (navigator as Navigator & { globalPrivacyControl?: boolean })
+          .globalPrivacyControl === true) ||
       document.documentElement?.hasAttribute(EXTENSION_ATTRIBUTE) === true ||
       localStorage.getItem(OPT_OUT_KEY) === "1"
     );

@@ -37,7 +37,7 @@ try {
   await Bun.$`ln -s ${pkg} ${resolve(scratch, "node_modules/@a2f0/ct-client")}`.quiet();
   await Bun.write(
     resolve(scratch, "consumer.mts"),
-    'import { createTracker, type Tracker } from "@a2f0/ct-client"; const ct: Tracker = createTracker({site:"smoke", capture:"all", page:()=>"/"}); ct.init(); void ct.flush(); ct.setOptOut(true); ct.destroy();\n// @ts-expect-error site must remain typed as string\ncreateTracker({site:123});\n',
+    'import { createTracker, type Tracker } from "@a2f0/ct-client"; const ct: Tracker = createTracker({site:"smoke", capture:"all", page:()=>"/", overrideGpc:true}); ct.init(); void ct.flush(); ct.setOptOut(true); ct.destroy();\n// @ts-expect-error site must remain typed as string\ncreateTracker({site:123});\n// @ts-expect-error overrideGpc accepts only booleans\ncreateTracker({site:"smoke", overrideGpc:"true"});\n',
   );
   for (const [module, resolution] of [
     ["ESNext", "Bundler"],

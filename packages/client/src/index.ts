@@ -15,6 +15,7 @@ export function createTracker(options: TrackerOptions): Tracker {
   const interval = bounded(options.flushIntervalMs, 5_000, 100, 60_000);
   const capacity = bounded(options.maxQueueSize, 500, batchSize, 1_000);
   const endpoint = options.endpoint ?? "https://ct.a2f0.net/v1/clicks";
+  const overrideGpc = options.overrideGpc === true;
   let initialized = false;
   let disabled = false;
   let queue: ClickEvent[] = [];
@@ -34,7 +35,7 @@ export function createTracker(options: TrackerOptions): Tracker {
   }
 
   function blocked(): boolean {
-    if (disabled || optedOut()) {
+    if (disabled || optedOut(overrideGpc)) {
       clear();
       return true;
     }

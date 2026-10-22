@@ -17,6 +17,8 @@ export interface TrackerOptions {
   flushIntervalMs?: number;
   maxQueueSize?: number;
   enabled?: boolean;
+  /** Ignore Global Privacy Control only when true. Defaults to false; other opt-outs still apply. */
+  overrideGpc?: boolean;
 }
 
 export interface Tracker {

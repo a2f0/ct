@@ -22,7 +22,8 @@ The admin UI and its data API are intentionally public and read-only for the
 initial release. Do not add authentication without a request. Do not add raw text,
 form values, URLs, user identifiers, or persistent visitor identifiers to clicks.
 The client must remain inert until init, honor opt-outs before capture and flush,
-and refuse automated browsers. Cover behavioral changes with tests.
+and refuse automated browsers. The per-tracker overrideGpc option may bypass only
+GPC when explicitly true; it defaults to false. Cover behavioral changes with tests.
 
 Use .secrets only as a gitignored link to the matrix-secrets/ct namespace if one
 is configured. Never read, print, log, or commit secret values. Wrangler's existing

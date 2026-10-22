@@ -36,6 +36,7 @@ Validate configuration before initializing the tracker.
 | flushIntervalMs | 5000 | 100–60000 milliseconds |
 | maxQueueSize | 500 | Bounded between batch size and 1000 |
 | enabled | true | false makes init inert |
+| overrideGpc | false | Only true ignores Global Privacy Control; other opt-outs still apply |
 | endpoint | CT endpoint | HTTPS, or HTTP on localhost for development |
 
 capture values are 'all', 'interactive', and 'marked'. Assign a stable label with
@@ -54,6 +55,10 @@ other 4xx responses discard the rejected batch. Event IDs make retries idempoten
 setOptOut(true) saves ct:opt-out=1 in localStorage, clears the queue and stops
 capture for this site. setOptOut(false) removes that preference. Trackers also
 honor DNT, Global Privacy Control and the CT extension's data-ct-disabled marker.
+To explicitly override only Global Privacy Control, pass overrideGpc: true to
+createTracker before calling init. The default is false. This applies to capture
+and delivery for that tracker only; DNT, saved and in-memory opt-outs, the extension,
+storage errors, and automated-browser guards still disable tracking.
 An opt-out cannot retract a request the server already received. Storage errors
 disable tracking. The extension applies across all sites and must be installed
 separately in each browser/profile. Preferences are not synchronized between them.
