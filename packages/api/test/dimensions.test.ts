@@ -1,5 +1,6 @@
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect, test } from "bun:test";
+import { CLIENT_PROTOCOL } from "../../../scripts/collectorReady";
 import { admin } from "../src/admin";
 import type { AdminEnv, Env } from "../src/env";
 import { ingest } from "../src/index";
@@ -86,7 +87,7 @@ test("migration preserves old clients and backfills only the historically known 
     ).toThrow();
     const indexes = old
       .query(
-        "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE '%app%' OR name='clicks_environment_time'",
+        "SELECT name FROM sqlite_master WHERE type='index' AND name IN ('clicks_app_time', 'clicks_environment_time', 'clicks_site_environment_app_time')",
       )
       .all();
     expect(indexes).toHaveLength(3);
@@ -274,4 +275,45 @@ test("filters scope counts and every cursor page while Unknown and retries retai
     "environment=all",
   ])
     expect((await get(`events?${query}`)).status).toBe(400);
+});
+
+test("unknown environments and bounded retained app choices remain available independently", async () => {
+  const now = Date.now();
+  const insert = storage.sqlite.query(
+    "INSERT INTO clicks (site,id,timestamp,received_at,page,target,label,app,environment) VALUES ('devopsrockstars', ?, ?, ?, '/', 'canvas', NULL, ?, NULL)",
+  );
+  for (let i = 0; i < 501; i++)
+    insert.run(
+      crypto.randomUUID(),
+      now,
+      now,
+      `app-${String(i).padStart(3, "0")}`,
+    );
+  insert.run(crypto.randomUUID(), now - 91 * 86400000, now, "000-expired");
+  const metadata = (await (await get("sites")).json()) as { apps: string[] };
+  expect(metadata.apps).toHaveLength(500);
+  expect(metadata.apps[0]).toBe("app-000");
+  expect(metadata.apps.at(-1)).toBe("app-499");
+  const unknown = (await (
+    await get("summary?environment=~unknown&app=app-500")
+  ).json()) as { totals: { clicks: number } };
+  expect(unknown.totals.clicks).toBe(1);
+  env.DB.prepare = (() => ({
+    bind: () => ({
+      all: async () => {
+        throw new Error("app metadata offline");
+      },
+    }),
+  })) as unknown as D1Database["prepare"];
+  expect(await (await get("sites")).json()).toMatchObject({
+    sites: ["devopsrockstars"],
+    apps: [],
+  });
+});
+
+test("the actual collector declares the protocol required by publication", async () => {
+  const health = (await (
+    await ingest(new Request("https://ct.a2f0.net/health"), {} as Env)
+  ).json()) as { protocolVersion: number };
+  expect(health.protocolVersion).toBeGreaterThanOrEqual(CLIENT_PROTOCOL);
 });

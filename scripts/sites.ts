@@ -24,7 +24,12 @@ export function canonicalSites(value: unknown): string {
         left.localeCompare(right),
       );
       for (const [origin, environment] of hosts) {
-        const url = new URL(origin);
+        let url: URL;
+        try {
+          url = new URL(origin);
+        } catch {
+          throw new Error(`Invalid origin for ${site}`);
+        }
         if (url.protocol !== "https:" || url.origin !== origin)
           throw new Error(`Invalid origin for ${site}`);
         if (environment !== "production" && environment !== "staging")

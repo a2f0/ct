@@ -38,7 +38,8 @@ export async function admin(
         "SELECT DISTINCT app FROM clicks WHERE app IS NOT NULL AND timestamp >= ? ORDER BY app LIMIT 500",
       )
         .bind(Date.now() - RETENTION_DAYS * DAY)
-        .all<{ app: string }>();
+        .all<{ app: string }>()
+        .catch(() => ({ results: [] as { app: string }[] }));
       return json({
         sites: Object.keys(env.SITES).sort(),
         apps: apps.results.map((row) => row.app),

@@ -145,3 +145,21 @@ counts. Site, app, environment and date filters apply to every summary group and
 every recent-event page. The cursor order remains timestamp, event ID and site.
 The UI defaults to Production to keep staging activity out of the normal overview;
 Staging, All environments and Unknown environment are explicit choices.
+
+
+When an SDK release changes the wire protocol, merge the reviewed change, then
+run `bun run deploy` from the merged main checkout before waiting for npm publish.
+The Publish client workflow waits for `/health` protocolVersion >= 2 and successful
+exact-Origin OPTIONS preflights for every configured origin before handing the
+package to the publish job. It sends no click data. This prevents automatic npm
+publication from racing the manual migration/Worker rollout. Readiness polling is
+bounded; if deployment takes longer, complete it and rerun Publish client. Do not
+bypass the gate. Future incompatible wire changes must raise the client readiness
+requirement and deploy matching collector support first. Old clients remain
+supported. Only after both deployment and the registry tarball are verified may
+consumers adopt the new release.
+
+The app-choice query is optional metadata: if it fails, `/api/sites` still returns
+the static site/environment registry with an empty app list. Existing valid app
+URL selections remain usable, and summary/events requests keep their normal error
+handling.

@@ -118,3 +118,28 @@ test("dimension filters default to production and persist through pages, paginat
     fullPage: true,
   });
 });
+
+test("valid apps outside the bounded dropdown remain selected with missing metadata", async ({
+  page,
+}) => {
+  const app = "z".repeat(64);
+  await page.route("**/api/sites", (route) =>
+    route.fulfill({ json: { sites: ["skyline"], apps: [] } }),
+  );
+  await page.route("**/api/events?**", (route) =>
+    route.fulfill({ json: { events: [], nextCursor: null } }),
+  );
+  await page.goto(`${admin}/recent?app=${app}`);
+  await expect(
+    page.getByRole("combobox", { name: "App", exact: true }),
+  ).toHaveValue(app);
+  await expect(
+    page.getByRole("table", { name: "Recent clicks" }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

@@ -4,7 +4,8 @@ import { normalizeTimes, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
-  if (path === "/health" && request.method === "GET") return json({ ok: true });
+  if (path === "/health" && request.method === "GET")
+    return json({ ok: true, protocolVersion: 2 });
   if (path !== "/v1/clicks") return json({ error: "Not found" }, 404);
   const origin = request.headers.get("Origin");
   if (

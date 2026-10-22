@@ -42,3 +42,9 @@ test("deployment refuses invalid site names and origins before uploading", () =>
   ])
     expect(() => canonicalSites(invalid)).toThrow();
 });
+
+test("malformed origins identify the owning site", () => {
+  expect(() =>
+    canonicalSites({ skyline: { "not a URL": "production" } }),
+  ).toThrow("Invalid origin for skyline");
+});
