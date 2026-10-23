@@ -4,14 +4,22 @@ bun run agent-tool hooks check
 
 # Both guards inspect the exact same ref tuples, including non-HEAD pushes.
 remote=${1:-origin}
-refs=$(cat)
+if [ -t 0 ]; then
+  refs=
+else
+  refs=$(cat)
+fi
 printf '%s\n' "$refs" | bun run agent-tool branch check --pre-push
 zero=0000000000000000000000000000000000000000
 printf '%s\n' "$refs" | while read -r local_ref local_oid _remote_ref remote_oid; do
   [ -n "$local_ref" ] || continue
   [ "$local_oid" != "$zero" ] || continue
   if [ "$remote_oid" != "$zero" ]; then
-    bun run agent-tool commits check --range "$local_oid" --exclude "$remote_oid" </dev/null
+    if git remote get-url "$remote" >/dev/null 2>&1; then
+      bun run agent-tool commits check --range "$local_oid" --exclude "$remote_oid" --exclude-remotes "$remote" </dev/null
+    else
+      bun run agent-tool commits check --range "$local_oid" --exclude "$remote_oid" </dev/null
+    fi
   elif git remote get-url "$remote" >/dev/null 2>&1; then
     bun run agent-tool commits check --range "$local_oid" --exclude-remotes "$remote" </dev/null
   else

@@ -105,6 +105,32 @@ test("pre-push checks the pushed commits even when HEAD is different", async () 
     );
     expect(accepted.exitCode).toBe(0);
     expect(await Bun.file(resolve(directory, "verified")).text()).toBe("yes");
+    git("commit", "-m", "chore: install fixture tooling");
+    const previous = git("rev-parse", "HEAD");
+    git("update-ref", "refs/remotes/origin/feat/valid", previous);
+    git("update-ref", "refs/remotes/origin/main", forbidden);
+    git("merge", "--no-ff", forbidden, "-m", "chore: integrate updated main");
+    const integrated = git("rev-parse", "HEAD");
+    const mergedBase = command(
+      ["sh", hook, "origin"],
+      `refs/heads/main ${integrated} refs/heads/feat/valid ${previous}\n`,
+    );
+    expect(mergedBase.exitCode, mergedBase.stderr.toString()).toBe(0);
+    git(
+      "commit",
+      "--allow-empty",
+      "-m",
+      "feat: new attribution\n\nCo-authored-by: Fixture <fixture@example.invalid>",
+    );
+    const rejectedAfterMerge = command(
+      ["sh", hook, "origin"],
+      `refs/heads/main ${git("rev-parse", "HEAD")} refs/heads/feat/valid ${previous}\n`,
+    );
+    expect(rejectedAfterMerge.exitCode).not.toBe(0);
+    expect(
+      rejectedAfterMerge.stdout.toString() +
+        rejectedAfterMerge.stderr.toString(),
+    ).toContain("Co-authored-by");
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
