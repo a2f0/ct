@@ -12,6 +12,10 @@ inside their workspaces.
 | `testing/` | Browser fixture preparation and packed SDK smoke tests | `bun run test:browser`, `bun run package:smoke` |
 | `git/hooks/` | Commit-message and pre-push gates | `bun run hooks:install` |
 
+After pulling changes that relocate hook sources, run `bun run hooks:install`
+again. Existing clones that still use `.githooks` need this step to enable the
+hooks at `scripts/git/hooks/`.
+
 Tests for a script live beside it and run with `bun run test`. The scripts
 TypeScript project includes these directories recursively. Keep relative root
 resolution and every CI, test, and package-script caller consistent when moving a

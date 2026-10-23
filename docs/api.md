@@ -4,6 +4,10 @@ The [operations guide](operations.md) covers deployment, administrator accounts,
 and release readiness. The [privacy guide](privacy.md) describes collection and
 delivery limits.
 
+Protocol or schema rollouts must also satisfy the
+[npm publication readiness gate](operations.md#npm-publication) before releasing
+a client that depends on them.
+
 ## Endpoints
 
 POST https://ct.a2f0.net/v1/clicks accepts text/plain JSON or application/json with
