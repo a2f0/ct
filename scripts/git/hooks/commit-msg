@@ -1,8 +1,4 @@
 #!/bin/sh
 set -eu
-subject=$(head -n 1 "$1")
-case "$subject" in
-  feat:*|feat\(*\):*|fix:*|fix\(*\):*|chore:*|chore\(*\):*|docs:*|docs\(*\):*|test:*|test\(*\):*|refactor:*|refactor\(*\):*|ci:*|ci\(*\):*|build:*|build\(*\):*|perf:*|perf\(*\):*|revert:*|revert\(*\):*|style:*|style\(*\):*) ;;
-  *) echo 'Use a Conventional Commit subject.' >&2; exit 1 ;;
-esac
-if [ "${#subject}" -gt 50 ]; then echo 'Commit subject must be at most 50 characters.' >&2; exit 1; fi
+bun run agent-tool hooks check
+bun run agent-tool commits check --message-file "$1"

@@ -1,0 +1,21 @@
+{
+  "label": "verify",
+  "steps": [
+    {
+      "label": "check",
+      "command": ["bun", "run", "check"]
+    },
+    {
+      "label": "tests",
+      "command": ["bun", "run", "test"]
+    },
+    {
+      "label": "build",
+      "command": ["bun", "run", "build"]
+    },
+    {
+      "label": "package-smoke",
+      "command": ["bun", "run", "package:smoke"]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-bun run check
-bun run test
-bun run build
-bun run package:smoke
+bun run agent-tool hooks check
+bun run agent-tool branch check --pre-push
+bun run agent-tool commits check --range origin/main..HEAD
+bun run verify
