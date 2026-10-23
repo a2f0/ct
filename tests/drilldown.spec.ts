@@ -63,7 +63,7 @@ test("overview rankings open scoped click lists that keep their scope while pagi
     .getByRole("link", { name: /Austin/ })
     .click();
   await expect(page).toHaveURL(
-    `${admin}/recent?country=US&region=Texas&city=Austin&site=skyline&environment=all&days=30`,
+    `${admin}/recent?country=US&region=Texas&regionCode=TX&city=Austin&site=skyline&environment=all&days=30`,
   );
   await expect(page).toHaveTitle("Austin, Texas, United States · CT");
   await expect(
@@ -77,6 +77,7 @@ test("overview rankings open scoped click lists that keep their scope while pagi
     expect(query.get("environment")).toBe("");
     expect(query.get("country")).toBe("US");
     expect(query.get("region")).toBe("Texas");
+    expect(query.get("regionCode")).toBe("TX");
     expect(query.get("city")).toBe("Austin");
   }
   expect(requests.map((query) => query.get("cursor"))).toEqual([null, "next"]);
@@ -147,8 +148,8 @@ test("each ranking links to the clicks it counts, including Unknown groups", asy
     [
       "States & regions",
       /Texas/,
-      "/recent?country=US&region=Texas",
-      { country: "US", region: "Texas" },
+      "/recent?country=US&region=Texas&regionCode=TX",
+      { country: "US", region: "Texas", regionCode: "TX" },
     ],
     [
       "Top pages",

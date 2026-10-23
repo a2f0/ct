@@ -154,6 +154,7 @@ export function RecentClicks({
                         href={link({
                           country: event.location.country,
                           region: event.location.region,
+                          regionCode: event.location.regionCode,
                           city: event.location.city,
                         })}
                       >

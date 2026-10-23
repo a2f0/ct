@@ -19,6 +19,7 @@ const SCOPE = [
   "ip",
   "country",
   "region",
+  "regionCode",
   "city",
   "page",
   "target",
@@ -95,9 +96,13 @@ export function drillHref(
 export function scopeHeading(scope: Scope) {
   const show = (value: string | null | undefined, unknown: string) =>
     value === undefined ? [] : [value ?? unknown];
+  const region =
+    scope.region === undefined && scope.regionCode === undefined
+      ? []
+      : [scope.region ?? scope.regionCode ?? "Unknown region"];
   const place = [
     ...show(scope.city, "Unknown city"),
-    ...show(scope.region, "Unknown region"),
+    ...region,
     ...(scope.country === undefined ? [] : [countryName(scope.country)]),
   ];
   const element = [

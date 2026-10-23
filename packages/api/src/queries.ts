@@ -16,6 +16,10 @@ const DIMENSIONS = {
   ip: { column: "clicks.ip_address", parse: normalizeIp },
   country: { column: "locations.country", parse: match(/^[A-Z]{2}$/) },
   region: { column: "locations.region", parse: text },
+  regionCode: {
+    column: "locations.region_code",
+    parse: match(/^[A-Z0-9-]{1,8}$/),
+  },
   city: { column: "locations.city", parse: text },
   page: { column: "clicks.page", parse: match(PAGE) },
   target: { column: "clicks.target", parse: match(TARGET) },

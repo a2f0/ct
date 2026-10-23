@@ -26,8 +26,8 @@ stays below D1's 100-parameter limit and its free-plan query budget.
 The admin Worker exposes GET /api/sites, /api/summary and /api/events. Optional site, app, environment,
 from and to filters apply to both data endpoints; dates are ISO timestamps, from
 inclusive and to exclusive. The exact-match drill-down filters ip, country,
-region, city, page, target and label apply the same way and combine with the
-others; ~unknown selects missing values, matching the Unknown groups in summary
+region, regionCode, city, page, target and label apply the same way and combine
+with the others; ~unknown selects missing values, matching the Unknown groups in summary
 rankings. Location filters compare the joined location, so country=~unknown
 also matches clicks without one. IPs are canonicalized like stored addresses;
 other values must match the stored form, and invalid values return 400.

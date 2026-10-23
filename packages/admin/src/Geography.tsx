@@ -27,7 +27,11 @@ export function Geography({
         key: JSON.stringify([row.country, row.region, row.regionCode]),
         title: row.region ?? row.regionCode ?? "Unknown region",
         detail: countryName(row.country),
-        href: link({ country: row.country, region: row.region }),
+        href: link({
+          country: row.country,
+          region: row.region,
+          regionCode: row.regionCode,
+        }),
         clicks: row.clicks,
       })),
     },
@@ -47,6 +51,7 @@ export function Geography({
         href: link({
           country: row.country,
           region: row.region,
+          regionCode: row.regionCode,
           city: row.city,
         }),
         clicks: row.clicks,

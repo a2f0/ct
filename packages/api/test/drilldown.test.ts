@@ -82,6 +82,12 @@ test("drill-down filters select exact values, and ~unknown matches the overview'
     city: "Toronto",
   });
   await deliver([click("/a")], "invalid", {});
+  // Region rankings group by code too, so unnamed regions stay distinct.
+  for (const regionCode of ["AA", "BB"])
+    await deliver([click("/d", "a")], "192.0.2.1", {
+      country: "FR",
+      regionCode,
+    });
 
   for (const [query, expected] of [
     ["ip=203.0.113.8", 2],
@@ -98,6 +104,9 @@ test("drill-down filters select exact values, and ~unknown matches the overview'
     ["target=button&label=nav.home", 2],
     ["target=button&label=~unknown", 2],
     ["page=/a&ip=203.0.113.8&environment=staging", 0],
+    ["country=FR&region=~unknown", 2],
+    ["country=FR&region=~unknown&regionCode=AA", 1],
+    ["country=US&region=Texas&regionCode=TX", 2],
   ] as const)
     expect(await events(query)).toHaveLength(expected);
 
@@ -155,6 +164,7 @@ test("invalid drill-down values are rejected without querying clicks", async () 
     "ip=example.com",
     "country=us",
     "country=USA",
+    "regionCode=tx",
     `region=${"r".repeat(129)}`,
     "city=%00",
     "page=relative",

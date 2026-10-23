@@ -14,7 +14,7 @@ test("drill-down links round-trip values that paths cannot carry", () => {
     { ip: "2001:db8::8" },
     { ip: null },
     { country: "US" },
-    { country: "CH", region: "Bern", city: "Biel/Bienne" },
+    { country: "CH", region: "Bern", regionCode: "BE", city: "Biel/Bienne" },
     { country: "BR", region: null, city: "São Paulo" },
     { page: "//docs/../:id" },
     { target: "button", label: ".." },
@@ -57,4 +57,9 @@ test("headings name the drill-down, including partial scopes", () => {
   expect(scopeHeading({ city: "Austin" })?.title).toBe("Austin");
   expect(scopeHeading({ label: null })?.title).toBe("No label");
   expect(scopeHeading({ ip: null })?.title).toBe("Unknown IP address");
+  expect(
+    scopeHeading({ country: "FR", region: null, regionCode: "AA" })?.title,
+  ).toBe("AA, France");
+  // Hand-edited URLs reach Intl, which throws for malformed codes.
+  expect(scopeHeading({ country: "USA" })?.title).toBe("USA");
 });
