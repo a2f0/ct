@@ -6,7 +6,7 @@ shows activity. A shared browser extension disables CT in Chrome and Firefox.
 
 - API: https://ct.a2f0.net
 - Dashboard: https://ct-admin.a2f0.net
-- Integrations: Skyline, a2f0.net, devopsrockstars.com, and Balebase (production and staging)
+- Integrations: see the [registered sites and apps](docs/operations.md#registered-integrations)
 
 ## Workspaces
 
