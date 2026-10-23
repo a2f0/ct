@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { canonicalSites } from "./sites";
 
-const root = resolve(import.meta.dir, "..");
+const root = resolve(import.meta.dir, "../..");
 const preview = process.argv.includes("--dry-run");
 const api = await Bun.file(resolve(root, "packages/api/wrangler.json")).json();
 const admin = await Bun.file(

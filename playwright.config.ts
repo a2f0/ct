@@ -22,7 +22,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        "bun scripts/browserPrepare.ts && bunx --no-install wrangler dev --config tests/wrangler.api.json --port 4175",
+        "bun scripts/testing/browserPrepare.ts && bunx --no-install wrangler dev --config tests/wrangler.api.json --port 4175",
       url: "http://127.0.0.1:4175/health",
       timeout: 120_000,
     },

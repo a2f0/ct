@@ -32,7 +32,7 @@ for (const args of [
 const account = Bun.spawn(
   [
     "node",
-    "scripts/adminUser.ts",
+    "scripts/admin/adminUser.ts",
     "create",
     "--local",
     "--config",

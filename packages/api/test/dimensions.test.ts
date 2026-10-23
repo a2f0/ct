@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { CLIENT_PROTOCOL } from "../../../scripts/collectorReady";
+import { CLIENT_PROTOCOL } from "../../../scripts/deploy/collectorReady";
 import { admin as handleAdmin } from "../src/admin";
 import type { AdminEnv, Env } from "../src/env";
 import { ingest } from "../src/index";

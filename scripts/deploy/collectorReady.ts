@@ -74,7 +74,7 @@ export async function waitForCollector(
 
 if (import.meta.main) {
   const config = await Bun.file(
-    new URL("../packages/api/wrangler.json", import.meta.url),
+    new URL("../../packages/api/wrangler.json", import.meta.url),
   ).json();
   const origins = [
     ...new Set(

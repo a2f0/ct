@@ -1,6 +1,6 @@
 # Repository guidance
 
-Read README.md and docs/operations.md. All workspaces live in packages/: client
+Read README.md, scripts/README.md, and docs/operations.md. All workspaces live in packages/: client
 is the publishable browser SDK, api owns the two Workers and D1 schema, admin
 is the React UI, and extension produces Chrome and Firefox packages.
 
@@ -40,3 +40,9 @@ Managed skills in .agents/skills and .claude/skills come from the exact agent-to
 pin. Do not edit them; run bun run agents:sync after changing the pin and commit
 the lockfile, skills and .agent-tool-skills.json together. Brand sources live in
 assets/brand and image outputs are declared in agent-tool.json.
+
+Keep repository-owned scripts grouped by purpose under scripts/ and retain the
+package-script entrypoints when moving files. README covers setup and normal
+usage; docs/operations.md owns deployment and accounts, docs/api.md owns endpoint
+behavior, and docs/privacy.md owns collection limits. Update the authoritative
+guide and its links rather than duplicating procedures across documents.

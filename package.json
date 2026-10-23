@@ -19,12 +19,12 @@
     "test": "bun test packages scripts",
     "test:browser": "playwright test",
     "dev": "turbo run dev",
-    "hooks:install": "git config core.hooksPath .githooks",
-    "deploy": "bun scripts/deploy.ts",
-    "deploy:preview": "bun scripts/deploy.ts --dry-run",
-    "package:smoke": "bun scripts/packageSmoke.ts",
+    "hooks:install": "git config core.hooksPath scripts/git/hooks",
+    "deploy": "bun scripts/deploy/deploy.ts",
+    "deploy:preview": "bun scripts/deploy/deploy.ts --dry-run",
+    "package:smoke": "bun scripts/testing/packageSmoke.ts",
     "test:extension": "bun run --cwd packages/extension lint:package",
-    "admin:user": "node scripts/adminUser.ts"
+    "admin:user": "node scripts/admin/adminUser.ts"
   },
   "devDependencies": {
     "@a2f0/agent-tool": "0.1.15",

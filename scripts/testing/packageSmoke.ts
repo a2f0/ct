@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
-const root = resolve(import.meta.dir, "..");
+const root = resolve(import.meta.dir, "../..");
 const scratch = await mkdtemp(resolve(tmpdir(), "ct-package-"));
 try {
   const pack = Bun.spawnSync(["bun", "pm", "pack", "--destination", scratch], {

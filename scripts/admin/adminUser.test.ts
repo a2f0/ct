@@ -57,7 +57,7 @@ test("stdin failures do not print password contents or touch the database", asyn
     const child = Bun.spawn(
       [
         "node",
-        "scripts/adminUser.ts",
+        "scripts/admin/adminUser.ts",
         "create",
         "--local",
         "--email",

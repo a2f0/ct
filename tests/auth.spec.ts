@@ -18,7 +18,7 @@ async function account(
   const child = spawn(
     "node",
     [
-      "scripts/adminUser.ts",
+      "scripts/admin/adminUser.ts",
       action,
       "--local",
       "--config",
