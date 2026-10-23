@@ -35,7 +35,10 @@
         "https://skyline.devopsrockstars.com": "production"
       },
       "a2f0-net": {
-        "https://a2f0.net": "production"
+        "https://a2f0.net": "production",
+        "https://resume.a2f0.net": "production",
+        "https://demo.a2f0.net": "production",
+        "https://drive.a2f0.net": "production"
       },
       "devopsrockstars": {
         "https://devopsrockstars.com": "production",
@@ -47,6 +50,32 @@
         "https://app.balebase.com": "production",
         "https://website-staging.balebase.com": "staging",
         "https://app-staging.balebase.com": "staging"
+      },
+      "tearleads": {
+        "https://tearleads.com": "production",
+        "https://app.tearleads.com": "production",
+        "https://demo.tearleads.com": "production",
+        "https://website-staging.tearleads.com": "staging",
+        "https://app-staging.tearleads.com": "staging",
+        "https://demo-staging.tearleads.com": "staging"
+      },
+      "commandsnippets": {
+        "https://commandsnippets.com": "production",
+        "https://app.commandsnippets.com": "production",
+        "https://website-staging.commandsnippets.com": "staging",
+        "https://app-staging.commandsnippets.com": "staging"
+      },
+      "dnbm": {
+        "https://dnbm.a2f0.net": "production"
+      },
+      "nc": {
+        "https://nc.a2f0.net": "production"
+      },
+      "rn-sandbox": {
+        "https://rn-sandbox.a2f0.net": "production"
+      },
+      "continuity": {
+        "https://continuity.tearleads.com": "production"
       }
     }
   },

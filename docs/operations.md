@@ -181,6 +181,32 @@ The top-bar switch selects light or dark and persists ct.theme in localStorage;
 the switch still works if storage is blocked. The external theme.js script
 restores the choice before styles load while honoring the existing script CSP.
 
+## Registered integrations
+
+Both Worker configurations register the same exact HTTPS origins. Each hosting
+site owns its browser initialization. The collector derives production or staging
+from the registered origin and checks any environment sent by the client.
+
+| Site | Apps | Environments | GPC |
+| --- | --- | --- | --- |
+| skyline | Unknown (legacy client omits app) | Production | Overridden |
+| a2f0-net | website, resume, ascii-art, skyline, dnbm, dnbm-player, demo, drive | Production | Overridden |
+| devopsrockstars | website, company, search, store, skyline | Production, staging | Honored |
+| balebase | website, web-app | Production, staging | Honored |
+| tearleads | website, web-app, demo | Production, staging | Honored |
+| commandsnippets | website, web-app | Production, staging | Overridden |
+| dnbm | sequencer, player | Production | Overridden |
+| nc | web-app | Production | Overridden |
+| rn-sandbox | web-app | Production | Overridden |
+| continuity | gallery | Production | Overridden |
+
+The GPC override is an explicit client initialization option. Every integration
+still honors Do Not Track, the CT extension, explicit opt-outs, and automation
+guards. Reusable package mounts do not initialize another tracker: their hosting
+website captures embedded app clicks through app boundaries. Native and desktop
+clients and the CT admin dashboard are not instrumented by this browser rollout.
+Private browser apps use a fixed page value rather than record or workspace URLs.
+
 ## npm
 
 The client publishes as @a2f0/ct-client. Initial publication requires an authenticated
