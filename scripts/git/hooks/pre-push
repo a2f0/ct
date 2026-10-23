@@ -1,6 +1,22 @@
 #!/bin/sh
 set -eu
 bun run agent-tool hooks check
-bun run agent-tool branch check --pre-push
-bun run agent-tool commits check --range origin/main..HEAD
+
+# Both guards inspect the exact same ref tuples, including non-HEAD pushes.
+remote=${1:-origin}
+refs=$(cat)
+printf '%s\n' "$refs" | bun run agent-tool branch check --pre-push
+zero=0000000000000000000000000000000000000000
+printf '%s\n' "$refs" | while read -r local_ref local_oid _remote_ref remote_oid; do
+  [ -n "$local_ref" ] || continue
+  [ "$local_oid" != "$zero" ] || continue
+  if [ "$remote_oid" != "$zero" ]; then
+    bun run agent-tool commits check --range "$local_oid" --exclude "$remote_oid"
+  elif git remote get-url "$remote" >/dev/null 2>&1; then
+    bun run agent-tool commits check --range "$local_oid" --exclude-remotes "$remote"
+  else
+    # A URL destination has no tracking refs; inspect every reachable commit.
+    bun run agent-tool commits check --range "$local_oid"
+  fi
+done
 bun run verify

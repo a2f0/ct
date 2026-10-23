@@ -30,7 +30,7 @@
     "release:plan": "agent-tool release plan packages/client/package.json"
   },
   "devDependencies": {
-    "@a2f0/agent-tool": "0.1.18",
+    "@a2f0/agent-tool": "0.1.19",
     "@biomejs/biome": "2.5.15",
     "@playwright/test": "1.64.1",
     "@types/bun": "1.4.3",
