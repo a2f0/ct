@@ -8,15 +8,26 @@ inside their workspaces.
 | --- | --- | --- |
 | `admin/` | Account provisioning and its D1 adapter | `bun run admin:user -- <arguments>` |
 | `deploy/` | Worker deployment, site registry validation, live release readiness | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
-| `release/` | Registry publication decisions | Publishing CI |
 | `testing/` | Browser fixture preparation and packed SDK smoke tests | `bun run test:browser`, `bun run package:smoke` |
 | `git/hooks/` | Commit-message and pre-push gates | `bun run hooks:install` |
 
-After pulling changes that relocate hook sources, run `bun run hooks:install`
-again. Existing clones that still use `.githooks` need this step to enable the
-hooks at `scripts/git/hooks/`.
+After pulling hook-source changes, reinstall the hooks. The shared installer
+copies tracked `scripts/git/hooks/` sources
+into Git's hooks directory and tracks ownership. Existing clones with local
+`core.hooksPath` exactly `.githooks` or `scripts/git/hooks` first remove that local
+setting with `git config --local --unset core.hooksPath`, then run
+`bun run hooks:install`. Inspect other custom hook paths before changing them;
+use `--adopt` only after reviewing unmanaged hook replacements.
 
-Tests for a script live beside it and run with `bun run test`. The scripts
+`bun run check` records lint, typechecking, and managed skills. `bun run verify`
+adds unit tests, builds, and packed SDK smoke tests; the pre-push hook also checks
+actual destination branches and signed, unattributed commits. Browser and
+extension validation remain separate documented CI steps. Registry decisions
+use `bun run release:plan`; the [npm operations guide](../docs/operations.md#npm)
+owns version eligibility, collector readiness, and trusted-publishing gates.
+
+Tests for a script live beside it, or beside its hook directory, and run with
+`bun run test`. The scripts
 TypeScript project includes these directories recursively. Keep relative root
 resolution and every CI, test, and package-script caller consistent when moving a
 script. Shared review, PR, version, image, and managed-skill behavior comes from

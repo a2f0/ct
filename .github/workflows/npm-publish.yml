@@ -24,10 +24,11 @@ jobs:
         with:
           version: 2026.10.17
           install_args: bun node
+      - run: bun install --frozen-lockfile
       - id: version
-        run: bun scripts/release/publishDecision.ts
+        run: bun run release:plan --github-output
       - if: steps.version.outputs.publish == 'true'
-        run: bun install --frozen-lockfile && bun run check && bun run test && bun run build && bun run package:smoke
+        run: bun run verify
       - if: steps.version.outputs.publish == 'true'
         name: Wait for deployed collector and private admin
         timeout-minutes: 12

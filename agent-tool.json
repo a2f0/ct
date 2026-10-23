@@ -58,5 +58,42 @@
         ]
       }
     }
+  },
+  "branch": {
+    "types": [
+      "feat",
+      "fix",
+      "docs",
+      "style",
+      "refactor",
+      "perf",
+      "test",
+      "build",
+      "ci",
+      "chore",
+      "revert"
+    ],
+    "exempt": ["main"],
+    "maxLength": null
+  },
+  "hooks": {
+    "files": [
+      {
+        "source": "scripts/git/hooks/commit-msg",
+        "target": "commit-msg",
+        "executable": true
+      },
+      {
+        "source": "scripts/git/hooks/pre-push",
+        "target": "pre-push",
+        "executable": true
+      }
+    ]
+  },
+  "commits": {
+    "signatures": "present",
+    "signatureHeaderFallback": true,
+    "rejectCoauthors": true,
+    "subjects": true
   }
 }

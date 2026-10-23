@@ -1,0 +1,24 @@
+{
+  "label": "check",
+  "steps": [
+    {
+      "label": "lint",
+      "command": [
+        "bunx",
+        "--no-install",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "."
+      ]
+    },
+    {
+      "label": "typecheck",
+      "command": ["bun", "run", "typecheck"]
+    },
+    {
+      "label": "skills",
+      "command": ["bun", "run", "agents:check"]
+    }
+  ]
+}

@@ -161,8 +161,8 @@ a2f0, repository ct, workflow npm-publish.yml, environment npm, with publishing
 allowed. Restrict that GitHub environment to main, then set the repository variable
 NPM_TRUSTED_PUBLISHING=true to enable automated publishing. The workflow validates and packs
 without id-token access, then publishes the exact artifact from a separate job.
-It skips versions already present and fails closed on registry errors. Use the
-managed version workflow for client changes; never overwrite a published version.
+It publishes only an unpublished stable version newer than npm latest and fails
+closed on registry errors. Use the managed version workflow for client changes; never overwrite a published version.
 
 When an SDK release changes the wire protocol, merge the reviewed change, then
 run `bun run deploy` from the merged main checkout before waiting for npm publish.
