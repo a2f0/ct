@@ -157,6 +157,34 @@ test("unauthenticated Worker denies every data method, redirects deep links, and
     `${admin}/login?returnTo=${encodeURIComponent("/recent?site=skyline&environment=staging")}`,
   );
   await expect(page.getByRole("heading", { name: "Sign in." })).toBeVisible();
+  const icons = await page.evaluate(() =>
+    Promise.all(
+      Array.from(
+        document.querySelectorAll<HTMLLinkElement>(
+          'link[rel="icon"], link[rel="apple-touch-icon"]',
+        ),
+        async (link) => {
+          const response = await fetch(link.href, { redirect: "manual" });
+          return {
+            path: new URL(link.href).pathname,
+            status: response.status,
+            type: response.headers.get("Content-Type") ?? "",
+            bytes: (await response.arrayBuffer()).byteLength,
+          };
+        },
+      ),
+    ),
+  );
+  expect(icons.map(({ path }) => path)).toEqual([
+    "/favicon.ico",
+    "/favicon.svg",
+    "/apple-touch-icon.png",
+  ]);
+  for (const icon of icons) {
+    expect(icon.status).toBe(200);
+    expect(icon.type).toMatch(/^image\//);
+    expect(icon.bytes).toBeGreaterThan(0);
+  }
   const emailField = page.getByLabel("Email", { exact: true });
   await expect(emailField).toHaveAttribute("name", "email");
   await expect(emailField).toHaveAttribute("autocomplete", "username");

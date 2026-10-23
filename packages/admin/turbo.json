@@ -1,4 +1,13 @@
 {
   "extends": ["//"],
-  "tasks": { "build": { "dependsOn": ["@ct/extension#build"] } }
+  "tasks": {
+    "build": {
+      "dependsOn": ["@ct/extension#build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/agent-tool.json",
+        "$TURBO_ROOT$/assets/brand/**"
+      ]
+    }
+  }
 }

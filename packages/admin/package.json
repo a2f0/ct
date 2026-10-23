@@ -4,9 +4,9 @@
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
-    "build": "vite build && bun build.ts",
+    "build": "agent-tool --repo ../.. images build favicons && vite build && bun build.ts",
     "check": "tsc --noEmit",
-    "dev": "vite --host 127.0.0.1"
+    "dev": "agent-tool --repo ../.. images build favicons && vite --host 127.0.0.1"
   },
   "dependencies": {
     "better-auth": "1.7.12",
