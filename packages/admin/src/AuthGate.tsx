@@ -1,6 +1,6 @@
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { App } from "./App";
-import { authClient, returnTo } from "./authClient";
+import { authClient, rememberPassword, returnTo } from "./authClient";
 import { SignOut } from "./SignOut";
 import { ThemeSwitch } from "./ThemeSwitch";
 
@@ -35,7 +35,11 @@ export function AuthGate() {
     );
   if (!session || expired || error)
     return <Login expired={expired} unavailable={Boolean(error)} />;
-  return location.pathname === "/account" ? <Account /> : <App />;
+  return location.pathname === "/account" ? (
+    <Account email={session.user.email} />
+  ) : (
+    <App />
+  );
 }
 function Frame({ children }: { children: ReactNode }) {
   return (
@@ -78,6 +82,7 @@ function Login({
         setPassword("");
         return;
       }
+      await rememberPassword(email, password);
       location.assign(returnTo());
     } catch {
       setError("Sign-in is temporarily unavailable. Please try again.");
@@ -105,6 +110,7 @@ function Login({
           Email
           <input
             type="email"
+            name="email"
             autoComplete="username"
             required
             value={email}
@@ -115,6 +121,7 @@ function Login({
           Password
           <input
             type="password"
+            name="password"
             autoComplete="current-password"
             required
             maxLength={128}
@@ -138,7 +145,7 @@ function Login({
     </Frame>
   );
 }
-function Account() {
+function Account({ email }: { email: string }) {
   const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -168,6 +175,7 @@ function Account() {
         );
         return;
       }
+      await rememberPassword(email, password);
       setCurrent("");
       setPassword("");
       setConfirm("");
@@ -187,10 +195,19 @@ function Account() {
         <a href="/">Back to overview</a>
       </p>
       <form onSubmit={submit}>
+        <input
+          type="email"
+          name="email"
+          autoComplete="username"
+          value={email}
+          readOnly
+          hidden
+        />
         <label>
           Current password
           <input
             type="password"
+            name="current-password"
             autoComplete="current-password"
             required
             value={current}
@@ -201,6 +218,7 @@ function Account() {
           New password
           <input
             type="password"
+            name="new-password"
             autoComplete="new-password"
             required
             minLength={12}
@@ -213,6 +231,7 @@ function Account() {
           Confirm new password
           <input
             type="password"
+            name="confirm-password"
             autoComplete="new-password"
             required
             minLength={12}

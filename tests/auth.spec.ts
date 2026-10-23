@@ -64,6 +64,46 @@ async function account(
       : "Password reset; all existing sessions revoked.";
   expect(output.trim() === expected).toBe(true);
 }
+// Record PasswordCredential saves in both engines; Firefox lacks the API.
+async function recordSavedPasswords(
+  page: Page,
+  outcome: "saved" | "rejected" = "saved",
+) {
+  const saved: { id: string; password: string }[] = [];
+  await page.exposeFunction(
+    "ctRecordSavedPassword",
+    (id: string, password: string) => saved.push({ id, password }),
+  );
+  await page.addInitScript((outcome) => {
+    const record = (
+      window as unknown as {
+        ctRecordSavedPassword: (id: string, password: string) => Promise<void>;
+      }
+    ).ctRecordSavedPassword;
+    class PasswordCredential {
+      id: string;
+      password: string;
+      constructor(data: { id: string; password: string }) {
+        this.id = data.id;
+        this.password = data.password;
+      }
+    }
+    Object.defineProperty(window, "PasswordCredential", {
+      value: PasswordCredential,
+      configurable: true,
+    });
+    Object.defineProperty(navigator.credentials, "store", {
+      value: async (credential: PasswordCredential) => {
+        await record(credential.id, credential.password);
+        if (outcome === "rejected")
+          throw new DOMException("Saving declined", "NotAllowedError");
+        return credential;
+      },
+      configurable: true,
+    });
+  }, outcome);
+  return saved;
+}
 async function signIn(page: Page, email: string, password: string) {
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
@@ -117,6 +157,15 @@ test("unauthenticated Worker denies every data method, redirects deep links, and
     `${admin}/login?returnTo=${encodeURIComponent("/recent?site=skyline&environment=staging")}`,
   );
   await expect(page.getByRole("heading", { name: "Sign in." })).toBeVisible();
+  const emailField = page.getByLabel("Email", { exact: true });
+  await expect(emailField).toHaveAttribute("name", "email");
+  await expect(emailField).toHaveAttribute("autocomplete", "username");
+  const passwordField = page.getByLabel("Password", { exact: true });
+  await expect(passwordField).toHaveAttribute("name", "password");
+  await expect(passwordField).toHaveAttribute(
+    "autocomplete",
+    "current-password",
+  );
   await expect(
     page.getByRole("button", { name: /register|sign up/i }),
   ).toHaveCount(0);
@@ -154,8 +203,13 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
   });
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  const saved = await recordSavedPasswords(page);
   await page.goto(`${admin}/recent?site=skyline&environment=staging`);
   await signIn(page, email, initialPassword);
+  // Compare in Node so failures report booleans rather than credentials.
+  expect(saved.length).toBe(1);
+  expect(saved[0]?.id === email).toBe(true);
+  expect(saved[0]?.password === initialPassword).toBe(true);
   await expect(page).toHaveURL(
     `${admin}/recent?site=skyline&environment=staging`,
   );
@@ -193,6 +247,9 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
     ).toBeVisible();
   }
   await page.getByRole("link", { name: "Account", exact: true }).click();
+  await expect(page.locator('input[autocomplete="username"]')).toHaveValue(
+    email,
+  );
   await page
     .getByLabel("Current password", { exact: true })
     .fill(initialPassword);
@@ -206,6 +263,9 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
   await expect(page.getByRole("status")).toHaveText(
     "Password changed. Other sessions have been signed out.",
   );
+  expect(saved.length).toBe(2);
+  expect(saved[1]?.id === email).toBe(true);
+  expect(saved[1]?.password === changedPassword).toBe(true);
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Sign in." })).toBeVisible();
   expect((await context.request.get(`${admin}/api/sites`)).status()).toBe(401);
@@ -231,6 +291,51 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
   );
   expect(errors).toEqual([]);
 });
+
+for (const outcome of ["missing", "rejected"] as const) {
+  test(`sign-in and password changes finish when credential saving is ${outcome}`, async ({
+    page,
+    context,
+  }, info) => {
+    test.setTimeout(60_000);
+    const email = `saving-${outcome}-${info.project.name}-${crypto.randomUUID()}@example.test`;
+    await account("create", email, initialPassword);
+    await context.setExtraHTTPHeaders({
+      "CF-Connecting-IP": `203.0.113.${(outcome === "missing" ? 41 : 43) + (info.project.name === "chromium" ? 0 : 1)}`,
+    });
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    const saved =
+      outcome === "rejected" ? await recordSavedPasswords(page, outcome) : [];
+    if (outcome === "missing")
+      await page.addInitScript(() => {
+        delete (window as { PasswordCredential?: unknown }).PasswordCredential;
+      });
+    await page.goto(`${admin}/`);
+    expect(await page.evaluate(() => "PasswordCredential" in window)).toBe(
+      outcome === "rejected",
+    );
+    await signIn(page, email, initialPassword);
+    await page.getByRole("link", { name: "Account", exact: true }).click();
+    await page
+      .getByLabel("Current password", { exact: true })
+      .fill(initialPassword);
+    await page
+      .getByLabel("New password", { exact: true })
+      .fill(changedPassword);
+    await page
+      .getByLabel("Confirm new password", { exact: true })
+      .fill(changedPassword);
+    await page
+      .getByRole("button", { name: "Change password", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toHaveText(
+      "Password changed. Other sessions have been signed out.",
+    );
+    expect(saved.length).toBe(outcome === "rejected" ? 2 : 0);
+    expect(errors).toEqual([]);
+  });
+}
 
 test("sign-in service errors are distinguished from invalid credentials", async ({
   page,
