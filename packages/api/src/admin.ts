@@ -128,10 +128,7 @@ export async function admin(
     const filters = parseFilters(url, env.SITES);
     if (!filters)
       return json(
-        {
-          error:
-            "Invalid site, app, environment or date range (maximum 90 days)",
-        },
+        { error: "Invalid filter or date range (maximum 90 days)" },
         400,
       );
     if (url.pathname === "/api/summary")

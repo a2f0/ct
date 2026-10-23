@@ -69,7 +69,12 @@ export async function getData<T>(
 export const count = new Intl.NumberFormat("en").format;
 const countries = new Intl.DisplayNames("en", { type: "region" });
 export function countryName(code: string | null | undefined) {
-  return code ? (countries.of(code) ?? code) : "Unknown country";
+  if (!code) return "Unknown country";
+  try {
+    return countries.of(code) ?? code;
+  } catch {
+    return code; // Drill-down URLs can carry malformed codes.
+  }
 }
 export const time = (timestamp: number) =>
   new Date(timestamp).toLocaleString("en", {

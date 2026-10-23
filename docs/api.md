@@ -25,7 +25,13 @@ stays below D1's 100-parameter limit and its free-plan query budget.
 
 The admin Worker exposes GET /api/sites, /api/summary and /api/events. Optional site, app, environment,
 from and to filters apply to both data endpoints; dates are ISO timestamps, from
-inclusive and to exclusive. Ranges are capped at 90 days plus the end-day boundary.
+inclusive and to exclusive. The exact-match drill-down filters ip, country,
+region, regionCode, city, page, target and label apply the same way and combine
+with the others; ~unknown selects missing values, matching the Unknown groups in summary
+rankings. Location filters compare the joined location, so country=~unknown
+also matches clicks without one. IPs are canonicalized like stored addresses;
+other values must match the stored form, and invalid values return 400.
+Ranges are capped at 90 days plus the end-day boundary.
 Events returns 100 rows in descending click-time order and an opaque nextCursor.
 Server receipt times are internal and are not returned. Pass cursor with the same
 filters for the next page. All data endpoints require a valid administrator session and remain read-only. Responses are
@@ -63,6 +69,17 @@ Retry; a repeated pagination cursor requires Refresh data. Changing filters or
 refreshing starts a new date window and discards pending requests and previously
 loaded pages. An overview refresh preserves its last successful report if the
 request fails.
+
+Every overview ranking and recent-click cell links to the clicks it represents
+under the current site, app, environment and day filters. Site, app and
+environment values select that filter on /recent. Other values open a
+drill-down of /recent, such as /recent?ip=203.0.113.8 or
+/recent?country=US&region=Texas&city=Austin, which pages and scrolls exactly
+like the unfiltered list. Drill-down values stay in the query string because
+Cloudflare's asset router re-encodes paths and merges slashes, which would alter
+values such as Biel/Bienne. Changing a shared filter keeps the drill-down; the
+navigation links return to the unscoped views. Migration 0006_ip_filter.sql
+indexes IP addresses in click-time order for IP drill-downs.
 
 Dark Graphite is the default dashboard theme, using a2f0.net's charcoal palette.
 The top-bar switch selects light or dark and persists ct.theme in localStorage;

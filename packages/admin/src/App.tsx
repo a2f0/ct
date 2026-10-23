@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Events, getData, type Summary } from "./data";
+import {
+  type Drill,
+  drillHref,
+  encodeFilters,
+  readFilters,
+  readScope,
+  scopeHeading,
+  UNKNOWN,
+} from "./filters";
 import { Overview } from "./Overview";
 import { RecentClicks } from "./RecentClicks";
 import { SignOut } from "./SignOut";
@@ -20,51 +29,42 @@ type Report = {
 );
 
 export function App() {
-  // Native links give both views direct URLs, reloads, and browser history.
+  // Native links give every view a direct URL, reloads, and browser history.
   const view = /^\/recent\/?$/.test(window.location.pathname)
     ? "recent"
     : "overview";
-  const [sites, setSites] = useState<string[]>([]);
-  const [site, setSite] = useState(
-    () => new URLSearchParams(location.search).get("site") ?? "",
+  const [scope] = useState(() =>
+    view === "recent" ? readScope(location.search) : {},
   );
+  const [initial] = useState(() => readFilters(location.search));
+  const [sites, setSites] = useState<string[]>([]);
+  const [site, setSite] = useState(initial.site);
   const [apps, setApps] = useState<string[]>([]);
-  const [app, setApp] = useState(() => {
-    const value = new URLSearchParams(location.search).get("app") ?? "";
-    return value === "~unknown" || /^[a-z0-9][a-z0-9-]{0,63}$/.test(value)
-      ? value
-      : "";
-  });
-  const [environment, setEnvironment] = useState(() => {
-    const value = new URLSearchParams(location.search).get("environment") ?? "";
-    return value === "all"
-      ? ""
-      : ["production", "staging", "~unknown"].includes(value)
-        ? value
-        : "production";
-  });
-  const [days, setDays] = useState(() => {
-    const value = Number(new URLSearchParams(location.search).get("days"));
-    return [1, 7, 30, 90].includes(value) ? value : 7;
-  });
+  const [app, setApp] = useState(initial.app);
+  const [environment, setEnvironment] = useState(initial.environment);
+  const [days, setDays] = useState(initial.days);
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const active = useRef<AbortController | null>(null);
-  const filters = new URLSearchParams();
-  if (site) filters.set("site", site);
-  if (app) filters.set("app", app);
-  if (environment !== "production")
-    filters.set("environment", environment || "all");
-  if (days !== 7) filters.set("days", String(days));
-  const encodedFilters = filters.toString();
-  const search = encodedFilters ? `?${encodedFilters}` : "";
+  const filters = { site, app, environment, days };
+  // Navigation keeps the shared filters; only this page's URL keeps its scope.
+  const search = encodeFilters(filters);
+  const current = encodeFilters(filters, scope);
   const href = (path: string) => `${path}${search}`;
+  const link = (drill: Drill) => drillHref(drill, filters);
+  const drilled = scopeHeading(scope);
+  const heading =
+    drilled ??
+    (view === "recent"
+      ? { eyebrow: "EVERY INTERACTION", title: "Recent clicks" }
+      : { eyebrow: "THE BIG PICTURE", title: "Click activity" });
+  const name = view === "recent" ? heading.title : "Overview";
 
   useEffect(() => {
-    document.title = `${view === "overview" ? "Overview" : "Recent clicks"} · CT`;
-    history.replaceState(null, "", `${location.pathname}${search}`);
-  }, [view, search]);
+    document.title = `${name} · CT`;
+    history.replaceState(null, "", `${location.pathname}${current}`);
+  }, [name, current]);
 
   const refresh = useCallback(async () => {
     active.current?.abort();
@@ -83,13 +83,16 @@ export function App() {
     );
     const to = Date.now();
     const from = to - days * 86_400_000;
-    const query = new URLSearchParams({
+    const params = new URLSearchParams({
       site,
       app,
       environment,
       from: new Date(from).toISOString(),
       to: new Date(to).toISOString(),
-    }).toString();
+    });
+    for (const [key, value] of Object.entries(scope))
+      params.set(key, value ?? UNKNOWN);
+    const query = params.toString();
     try {
       const report =
         view === "overview"
@@ -130,7 +133,7 @@ export function App() {
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [site, app, environment, days, view]);
+  }, [site, app, environment, days, view, scope]);
 
   useEffect(() => {
     void refresh();
@@ -160,8 +163,8 @@ export function App() {
             <span aria-hidden="true">▥</span> Overview
           </a>
           <a
-            className={view === "recent" ? "nav-active" : undefined}
-            aria-current={view === "recent" ? "page" : undefined}
+            className={view === "recent" && !drilled ? "nav-active" : undefined}
+            aria-current={view === "recent" && !drilled ? "page" : undefined}
             href={href("/recent")}
           >
             <span aria-hidden="true">≡</span> Recent clicks
@@ -188,11 +191,9 @@ export function App() {
         </header>
         <section className="heading">
           <div>
-            <p className="eyebrow">
-              {view === "overview" ? "THE BIG PICTURE" : "EVERY INTERACTION"}
-            </p>
+            <p className="eyebrow">{heading.eyebrow}</p>
             <h1>
-              {view === "overview" ? "Click activity" : "Recent clicks"}
+              {heading.title}
               <span>.</span>
             </h1>
             <p className="subtitle">
@@ -293,12 +294,14 @@ export function App() {
             from={data?.from ?? 0}
             to={data?.to ?? 0}
             loading={loading}
+            link={link}
           />
         ) : data?.view === "recent" ? (
           <RecentClicks
             key={data.query}
             initial={data.events}
             query={data.query}
+            link={link}
           />
         ) : (
           <div className="card placeholder" role="status">

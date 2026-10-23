@@ -1,11 +1,14 @@
 import { count, countryName, type Summary } from "./data";
+import type { Link } from "./filters";
 
 export function Geography({
   geography,
   loading,
+  link,
 }: {
   geography: Summary["geography"] | undefined;
   loading: boolean;
+  link: Link;
 }) {
   const groups = [
     {
@@ -14,6 +17,7 @@ export function Geography({
         key: JSON.stringify([row.country]),
         title: countryName(row.country),
         detail: "",
+        href: link({ country: row.country }),
         clicks: row.clicks,
       })),
     },
@@ -23,6 +27,11 @@ export function Geography({
         key: JSON.stringify([row.country, row.region, row.regionCode]),
         title: row.region ?? row.regionCode ?? "Unknown region",
         detail: countryName(row.country),
+        href: link({
+          country: row.country,
+          region: row.region,
+          regionCode: row.regionCode,
+        }),
         clicks: row.clicks,
       })),
     },
@@ -39,6 +48,12 @@ export function Geography({
         detail: [row.region ?? row.regionCode, countryName(row.country)]
           .filter(Boolean)
           .join(" · "),
+        href: link({
+          country: row.country,
+          region: row.region,
+          regionCode: row.regionCode,
+          city: row.city,
+        }),
         clicks: row.clicks,
       })),
     },
@@ -61,13 +76,13 @@ export function Geography({
             </div>
             <div className="rankings">
               {group.rows?.map((row) => (
-                <div className="rank" key={row.key}>
+                <a className="rank" href={row.href} key={row.key}>
                   <div>
                     <strong>{row.title}</strong>
                     {row.detail && <small>{row.detail}</small>}
                   </div>
                   <b>{count(row.clicks)}</b>
-                </div>
+                </a>
               ))}
               {!group.rows?.length && (
                 <p className="empty-small">

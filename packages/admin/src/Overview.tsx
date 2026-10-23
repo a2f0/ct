@@ -1,5 +1,6 @@
 import { Chart } from "./Chart";
 import { count, type Summary } from "./data";
+import type { Link } from "./filters";
 import { Geography } from "./Geography";
 
 export function Overview({
@@ -7,11 +8,13 @@ export function Overview({
   from,
   to,
   loading,
+  link,
 }: {
   summary: Summary | null;
   from: number;
   to: number;
   loading: boolean;
+  link: Link;
 }) {
   return (
     <>
@@ -70,6 +73,7 @@ export function Overview({
             title: "Apps",
             rows: summary?.apps?.map((row) => ({
               name: row.app,
+              href: link({ app: row.app }),
               clicks: row.clicks,
             })),
           },
@@ -77,6 +81,7 @@ export function Overview({
             title: "Environments",
             rows: summary?.environments?.map((row) => ({
               name: row.environment,
+              href: link({ environment: row.environment }),
               clicks: row.clicks,
             })),
           },
@@ -88,11 +93,15 @@ export function Overview({
             </div>
             <div className="rankings">
               {rows?.map((row) => (
-                <div className="rank" key={row.name ?? "~unknown"}>
+                <a
+                  className="rank"
+                  href={row.href}
+                  key={row.name ?? "~unknown"}
+                >
                   <span className="target-icon">↖</span>
                   <strong>{row.name ?? "Unknown"}</strong>
                   <b>{count(row.clicks)}</b>
-                </div>
+                </a>
               ))}
               {!rows?.length && (
                 <p className="empty-small">
@@ -103,7 +112,7 @@ export function Overview({
           </section>
         ))}
       </div>
-      <Geography geography={summary?.geography} loading={loading} />
+      <Geography geography={summary?.geography} loading={loading} link={link} />
       <div className="two-column">
         <section className="card">
           <div className="card-heading">
@@ -112,7 +121,11 @@ export function Overview({
           </div>
           <div className="rankings">
             {summary?.pages.map((page, index) => (
-              <div className="rank" key={`${page.site}:${page.page}`}>
+              <a
+                className="rank"
+                href={link({ site: page.site, page: page.page })}
+                key={`${page.site}:${page.page}`}
+              >
                 <span className="rank-number">
                   {String(index + 1).padStart(2, "0")}
                 </span>
@@ -121,7 +134,7 @@ export function Overview({
                   <small>{page.site}</small>
                 </div>
                 <b>{count(page.clicks)}</b>
-              </div>
+              </a>
             ))}
             {!summary?.pages.length && (
               <p className="empty-small">No page activity yet.</p>
@@ -135,8 +148,9 @@ export function Overview({
           </div>
           <div className="rankings">
             {summary?.targets.map((target) => (
-              <div
+              <a
                 className="rank"
+                href={link({ target: target.target, label: target.label })}
                 key={JSON.stringify([target.target, target.label])}
               >
                 <span className="target-icon">↖</span>
@@ -145,7 +159,7 @@ export function Overview({
                   <small>{target.label ? target.target : "Element type"}</small>
                 </div>
                 <b>{count(target.clicks)}</b>
-              </div>
+              </a>
             ))}
             {!summary?.targets.length && (
               <p className="empty-small">No targets recorded yet.</p>
