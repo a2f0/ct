@@ -5,7 +5,7 @@ and release readiness. The [privacy guide](privacy.md) describes collection and
 delivery limits.
 
 Protocol or schema rollouts must also satisfy the
-[npm publication readiness gate](operations.md#npm-publication) before releasing
+[npm publication readiness gate](operations.md#npm) before releasing
 a client that depends on them.
 
 ## Endpoints
