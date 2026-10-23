@@ -1,6 +1,15 @@
 import { expect, test } from "bun:test";
 import { canonicalSites } from "./sites";
 
+test("deployed Workers share a valid production site registry", async () => {
+  const [api, admin] = await Promise.all(
+    ["wrangler.json", "wrangler.admin.json"].map((file) =>
+      Bun.file(new URL(`../packages/api/${file}`, import.meta.url)).json(),
+    ),
+  );
+  expect(canonicalSites(api.vars.SITES)).toBe(canonicalSites(admin.vars.SITES));
+});
+
 test("deployment compares site registries independently of ordering", () => {
   expect(
     canonicalSites({

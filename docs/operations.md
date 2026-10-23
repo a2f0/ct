@@ -189,9 +189,9 @@ from the registered origin and checks any environment sent by the client.
 
 | Site | Apps | Environments | GPC |
 | --- | --- | --- | --- |
-| skyline | Standalone Skyline pages | Production | Overridden |
-| a2f0-net | Website and embedded apps; standalone resume, demo, drive | Production | Overridden |
-| devopsrockstars | Website and enabled embedded apps | Production, staging | Honored |
+| skyline | Unknown (legacy client omits app) | Production | Overridden |
+| a2f0-net | website, resume, ascii-art, skyline, dnbm, dnbm-player, demo, drive | Production | Overridden |
+| devopsrockstars | website, company, search, store, skyline | Production, staging | Honored |
 | balebase | website, web-app | Production, staging | Honored |
 | tearleads | website, web-app, demo | Production, staging | Honored |
 | commandsnippets | website, web-app | Production, staging | Overridden |
