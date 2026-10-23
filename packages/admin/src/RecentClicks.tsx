@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { count, countryName, type Events, getData, time } from "./data";
+import type { Link } from "./filters";
 
 export function RecentClicks({
   initial,
   query,
+  link,
 }: {
   initial: Events;
   query: string;
+  link: Link;
 }) {
   const [data, setData] = useState(initial);
   const [paging, setPaging] = useState(false);
@@ -128,23 +131,43 @@ export function RecentClicks({
                     {time(event.timestamp)}
                   </time>
                 </td>
-                <td>{event.site}</td>
-                <td>{event.app ?? "Unknown"}</td>
-                <td>{event.environment ?? "Unknown"}</td>
-                <td className="ip-address">{event.ip ?? "Unknown"}</td>
+                <td>
+                  <a href={link({ site: event.site })}>{event.site}</a>
+                </td>
+                <td>
+                  <a href={link({ app: event.app })}>
+                    {event.app ?? "Unknown"}
+                  </a>
+                </td>
+                <td>
+                  <a href={link({ environment: event.environment })}>
+                    {event.environment ?? "Unknown"}
+                  </a>
+                </td>
+                <td className="ip-address">
+                  <a href={link({ ip: event.ip })}>{event.ip ?? "Unknown"}</a>
+                </td>
                 <td className="event-location">
                   {event.location ? (
                     <>
-                      <span>
+                      <a
+                        href={link({
+                          country: event.location.country,
+                          region: event.location.region,
+                          city: event.location.city,
+                        })}
+                      >
                         {[
                           event.location.city,
                           event.location.region ?? event.location.regionCode,
                         ]
                           .filter(Boolean)
                           .join(", ") || "Unknown city / region"}
-                      </span>
+                      </a>
                       <small>
-                        {countryName(event.location.country)}
+                        <a href={link({ country: event.location.country })}>
+                          {countryName(event.location.country)}
+                        </a>
                         {event.location.continent
                           ? ` · ${event.location.continent}`
                           : ""}
@@ -154,14 +177,30 @@ export function RecentClicks({
                       )}
                     </>
                   ) : (
-                    "Unknown"
+                    <a href={link({ country: null })}>Unknown</a>
                   )}
                 </td>
-                <td className="path">{event.page}</td>
-                <td>
-                  <span className="tag">{event.target}</span>
+                <td className="path">
+                  <a href={link({ site: event.site, page: event.page })}>
+                    {event.page}
+                  </a>
                 </td>
-                <td>{event.label ?? "—"}</td>
+                <td>
+                  <a className="tag" href={link({ target: event.target })}>
+                    {event.target}
+                  </a>
+                </td>
+                <td>
+                  {event.label ? (
+                    <a
+                      href={link({ target: event.target, label: event.label })}
+                    >
+                      {event.label}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

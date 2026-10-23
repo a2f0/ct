@@ -9,6 +9,10 @@ export interface Click {
 
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const APP = /^[a-z0-9][a-z0-9-]{0,63}$/;
+export const PAGE = /^\/[a-zA-Z0-9/:_.-]{0,199}$/;
+export const TARGET = /^[a-z][a-z0-9-]{0,31}$/;
+export const LABEL = /^[a-zA-Z0-9_.:-]{1,80}$/;
 
 export function validClick(value: unknown): value is Click {
   if (!value || typeof value !== "object") return false;
@@ -20,20 +24,18 @@ export function validClick(value: unknown): value is Click {
     ].includes(Object.keys(event).sort().join(",")) &&
     (event.app === undefined ||
       event.app === null ||
-      (typeof event.app === "string" &&
-        /^[a-z0-9][a-z0-9-]{0,63}$/.test(event.app))) &&
+      (typeof event.app === "string" && APP.test(event.app))) &&
     typeof event.id === "string" &&
     uuid.test(event.id) &&
     typeof event.timestamp === "number" &&
     Number.isSafeInteger(event.timestamp) &&
     event.timestamp > 0 &&
     typeof event.page === "string" &&
-    /^\/[a-zA-Z0-9/:_.-]{0,199}$/.test(event.page) &&
+    PAGE.test(event.page) &&
     typeof event.target === "string" &&
-    /^[a-z][a-z0-9-]{0,31}$/.test(event.target) &&
+    TARGET.test(event.target) &&
     (event.label === null ||
-      (typeof event.label === "string" &&
-        /^[a-zA-Z0-9_.:-]{1,80}$/.test(event.label)))
+      (typeof event.label === "string" && LABEL.test(event.label)))
   );
 }
 

@@ -7,7 +7,7 @@ export interface Location {
   timezone: string | null;
 }
 
-function text(value: unknown, limit = 128): string | null {
+export function text(value: unknown, limit = 128): string | null {
   if (typeof value !== "string") return null;
   const result = value.trim().normalize("NFC");
   return result && result.length <= limit && !/[\p{Cc}\p{Cf}]/u.test(result)

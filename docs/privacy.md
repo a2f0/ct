@@ -21,7 +21,9 @@ The ingestion Worker stores the request IP address from Cloudflare's
 CF-Connecting-IP header (or the preserved IPv6 address in Pseudo IPv4 overwrite
 mode). It also reads Cloudflare's request.cf country, continent, state/region,
 region code, city, and timezone. These fields are visible to authenticated administrators through the dashboard
-and data API, including full IP addresses. IPs can identify or link activity and
+and data API, including full IP addresses. Administrators can list the retained
+clicks for one IP address or location; this is a read-only filter over the same
+rows, not a stored profile. IPs can identify or link activity and
 must not be described as anonymous data. There is no separate visitor profile,
 session ID, browser geolocation prompt, or external geolocation service.
 

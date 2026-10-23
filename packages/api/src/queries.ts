@@ -1,10 +1,37 @@
 import { DAY, RETENTION_DAYS, type Sites } from "./env";
-import type { Location } from "./location";
+import { type Location, normalizeIp, text } from "./location";
+import { APP, LABEL, PAGE, TARGET } from "./validation";
 
-export interface Filters {
+const UNKNOWN = "~unknown";
+const match = (pattern: RegExp) => (value: string) =>
+  pattern.test(value) ? value : null;
+
+/** Exact-match click dimensions; ~unknown selects clicks missing the value. */
+const DIMENSIONS = {
+  app: { column: "clicks.app", parse: match(APP) },
+  environment: {
+    column: "clicks.environment",
+    parse: match(/^(production|staging)$/),
+  },
+  ip: { column: "clicks.ip_address", parse: normalizeIp },
+  country: { column: "locations.country", parse: match(/^[A-Z]{2}$/) },
+  region: { column: "locations.region", parse: text },
+  city: { column: "locations.city", parse: text },
+  page: { column: "clicks.page", parse: match(PAGE) },
+  target: { column: "clicks.target", parse: match(TARGET) },
+  label: { column: "clicks.label", parse: match(LABEL) },
+} satisfies Record<
+  string,
+  { column: string; parse: (value: string) => string | null }
+>;
+type Dimension = keyof typeof DIMENSIONS;
+
+/** Clicks without a location row join as all-null, matching the Unknown groups. */
+const SOURCE =
+  "clicks LEFT JOIN locations ON clicks.location_id = locations.id";
+
+export interface Filters extends Partial<Record<Dimension, string | null>> {
   site: string | null;
-  app?: string | null;
-  environment?: string | null;
   from: number;
   to: number;
 }
@@ -15,38 +42,43 @@ export function parseFilters(
   now = Date.now(),
 ): Filters | null {
   const site = url.searchParams.get("site") || null;
-  const app = url.searchParams.get("app") || null;
-  const environment = url.searchParams.get("environment") || null;
   const fromText = url.searchParams.get("from");
   const toText = url.searchParams.get("to");
   const from = fromText ? Date.parse(fromText) : now - 7 * DAY;
   const to = toText ? Date.parse(toText) : now + 300_000;
   if (
     (site !== null && !Object.hasOwn(sites, site)) ||
-    (app !== null &&
-      app !== "~unknown" &&
-      !/^[a-z0-9][a-z0-9-]{0,63}$/.test(app)) ||
-    (environment !== null &&
-      !["production", "staging", "~unknown"].includes(environment)) ||
     !Number.isFinite(from) ||
     !Number.isFinite(to) ||
     from >= to ||
     to - from > (RETENTION_DAYS + 1) * DAY
   )
     return null;
-  return { site, app, environment, from, to };
+  const filters: Filters = { site, from, to };
+  for (const name of Object.keys(DIMENSIONS) as Dimension[]) {
+    const value = url.searchParams.get(name);
+    if (!value) continue;
+    const parsed = value === UNKNOWN ? value : DIMENSIONS[name].parse(value);
+    if (parsed === null) return null;
+    filters[name] = parsed;
+  }
+  return filters;
 }
 
 function where(filters: Filters): { sql: string; values: (string | number)[] } {
   const clauses = ["clicks.timestamp >= ?", "clicks.timestamp < ?"];
   const values: (string | number)[] = [filters.from, filters.to];
-  for (const column of ["site", "app", "environment"] as const) {
-    const value = filters[column];
+  if (filters.site) {
+    clauses.push("clicks.site = ?");
+    values.push(filters.site);
+  }
+  for (const name of Object.keys(DIMENSIONS) as Dimension[]) {
+    const value = filters[name];
     if (!value) continue;
-    if (value === "~unknown" && column !== "site")
-      clauses.push(`clicks.${column} IS NULL`);
+    const { column } = DIMENSIONS[name];
+    if (value === UNKNOWN) clauses.push(`${column} IS NULL`);
     else {
-      clauses.push(`clicks.${column} = ?`);
+      clauses.push(`${column} = ?`);
       values.push(value);
     }
   }
@@ -56,15 +88,15 @@ function where(filters: Filters): { sql: string; values: (string | number)[] } {
 export async function summary(db: D1Database, filters: Filters) {
   const { sql, values } = where(filters);
   const statements = [
-    `SELECT COUNT(*) AS clicks, COUNT(DISTINCT site) AS sites, COUNT(DISTINCT site || ':' || page) AS pages FROM clicks WHERE ${sql}`,
-    `SELECT strftime('%Y-%m-%d', timestamp / 1000, 'unixepoch') AS day, COUNT(*) AS clicks FROM clicks WHERE ${sql} GROUP BY day ORDER BY day`,
-    `SELECT site, page, COUNT(*) AS clicks FROM clicks WHERE ${sql} GROUP BY site, page ORDER BY clicks DESC, site, page LIMIT 20`,
-    `SELECT target, label, COUNT(*) AS clicks FROM clicks WHERE ${sql} GROUP BY target, label ORDER BY clicks DESC, target, label LIMIT 20`,
-    `SELECT app, COUNT(*) AS clicks FROM clicks WHERE ${sql} GROUP BY app ORDER BY clicks DESC, app LIMIT 20`,
-    `SELECT environment, COUNT(*) AS clicks FROM clicks WHERE ${sql} GROUP BY environment ORDER BY clicks DESC, environment`,
-    `SELECT country, COUNT(*) AS clicks FROM clicks LEFT JOIN locations ON clicks.location_id = locations.id WHERE ${sql} GROUP BY country ORDER BY clicks DESC, country LIMIT 20`,
-    `SELECT country, region, region_code AS regionCode, COUNT(*) AS clicks FROM clicks LEFT JOIN locations ON clicks.location_id = locations.id WHERE ${sql} GROUP BY country, region, region_code ORDER BY clicks DESC, country, region, region_code LIMIT 20`,
-    `SELECT country, region, region_code AS regionCode, city, COUNT(*) AS clicks FROM clicks LEFT JOIN locations ON clicks.location_id = locations.id WHERE ${sql} GROUP BY country, region, region_code, city ORDER BY clicks DESC, country, region, region_code, city LIMIT 20`,
+    `SELECT COUNT(*) AS clicks, COUNT(DISTINCT site) AS sites, COUNT(DISTINCT site || ':' || page) AS pages FROM ${SOURCE} WHERE ${sql}`,
+    `SELECT strftime('%Y-%m-%d', timestamp / 1000, 'unixepoch') AS day, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY day ORDER BY day`,
+    `SELECT site, page, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY site, page ORDER BY clicks DESC, site, page LIMIT 20`,
+    `SELECT target, label, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY target, label ORDER BY clicks DESC, target, label LIMIT 20`,
+    `SELECT app, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY app ORDER BY clicks DESC, app LIMIT 20`,
+    `SELECT environment, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY environment ORDER BY clicks DESC, environment`,
+    `SELECT country, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY country ORDER BY clicks DESC, country LIMIT 20`,
+    `SELECT country, region, region_code AS regionCode, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY country, region, region_code ORDER BY clicks DESC, country, region, region_code LIMIT 20`,
+    `SELECT country, region, region_code AS regionCode, city, COUNT(*) AS clicks FROM ${SOURCE} WHERE ${sql} GROUP BY country, region, region_code, city ORDER BY clicks DESC, country, region, region_code, city LIMIT 20`,
   ];
   const [
     totals,
@@ -109,7 +141,7 @@ export async function recent(
   }
   const result = await db
     .prepare(
-      `SELECT clicks.site AS site, clicks.id AS id, timestamp, page, target, label, app, environment, ip_address AS ip, locations.id AS locationId, continent, country, region, region_code AS regionCode, city, timezone FROM clicks LEFT JOIN locations ON clicks.location_id = locations.id WHERE ${sql}${after} ORDER BY timestamp DESC, clicks.id DESC, site DESC LIMIT 101`,
+      `SELECT clicks.site AS site, clicks.id AS id, timestamp, page, target, label, app, environment, ip_address AS ip, locations.id AS locationId, continent, country, region, region_code AS regionCode, city, timezone FROM ${SOURCE} WHERE ${sql}${after} ORDER BY timestamp DESC, clicks.id DESC, site DESC LIMIT 101`,
     )
     .bind(...values)
     .all<
