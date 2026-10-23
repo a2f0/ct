@@ -8,7 +8,8 @@ Use the Bun and Node versions in .mise.toml, placed first on PATH in agent shell
 run mise trust. Install with bun install --frozen-lockfile and bun run hooks:install.
 Resolve GitHub identity with gh repo view --json nameWithOwner. Work on feature
 branches in <type>/<topic> form, create them with agent-tool branch create,
-sign Conventional Commits, preserve unrelated work, and never force-push or add attribution footers.
+sign Conventional Commits, preserve unrelated work, and never force-push or add
+attribution footers.
 
 Validate with bun run check, bun run test, bun run build, bun run package:smoke,
 and bun run test:browser. CI's verify job gates merges, including skill drift.

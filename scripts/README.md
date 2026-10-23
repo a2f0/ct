@@ -23,11 +23,11 @@ use `--adopt` only after reviewing unmanaged hook replacements.
 adds unit tests, builds, and packed SDK smoke tests; the pre-push hook also checks
 actual destination branches and signed, unattributed commits. Browser and
 extension validation remain separate documented CI steps. Registry decisions
-use `bun run release:plan`; only an unpublished stable version newer than npm's
-current latest is eligible. The publishing workflow retains collector readiness
-and trusted-publishing gates.
+use `bun run release:plan`; the [npm operations guide](../docs/operations.md#npm)
+owns version eligibility, collector readiness, and trusted-publishing gates.
 
-Tests for a script live beside it and run with `bun run test`. The scripts
+Tests for a script live beside it, or beside its hook directory, and run with
+`bun run test`. The scripts
 TypeScript project includes these directories recursively. Keep relative root
 resolution and every CI, test, and package-script caller consistent when moving a
 script. Shared review, PR, version, image, and managed-skill behavior comes from

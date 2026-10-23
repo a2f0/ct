@@ -29,6 +29,9 @@ bun run --cwd packages/api db:migrate:local
 bun run dev
 ```
 
+Existing clones should follow the [hook migration](scripts/README.md) before
+reinstalling hooks; it removes only the known legacy local hook-path setting.
+
 The API runs on port 8787; Vite on 5173 is for static UI development only.
 Authenticated local testing uses the admin Worker at http://localhost:8788,
 not the Vite proxy. Build the UI

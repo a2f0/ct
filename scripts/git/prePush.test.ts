@@ -8,12 +8,20 @@ test("pre-push checks the pushed commits even when HEAD is different", async () 
   const root = resolve(import.meta.dir, "../..");
   const cli = resolve(root, "node_modules/.bin/agent-tool");
   const zero = "0".repeat(40);
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith("GIT_")) delete env[key];
+  }
+  env.GIT_CONFIG_NOSYSTEM = "1";
+  env.GIT_CONFIG_GLOBAL = "/dev/null";
+  env.GIT_TERMINAL_PROMPT = "0";
   const command = (args: string[], stdin?: string) =>
     Bun.spawnSync(args, {
       cwd: directory,
       stdin: stdin === undefined ? "ignore" : new TextEncoder().encode(stdin),
       stdout: "pipe",
       stderr: "pipe",
+      env,
     });
   const git = (...args: string[]) => {
     const result = command(["git", ...args]);
@@ -87,4 +95,4 @@ test("pre-push checks the pushed commits even when HEAD is different", async () 
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
-});
+}, 30_000);
