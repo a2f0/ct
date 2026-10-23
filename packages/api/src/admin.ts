@@ -1,21 +1,98 @@
+import { createAuth } from "./auth";
 import { type AdminEnv, DAY, json, RETENTION_DAYS } from "./env";
 import { parseFilters, recent, summary } from "./queries";
+import { readBody } from "./validation";
 
 export async function admin(
   request: Request,
   env: AdminEnv,
 ): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname.startsWith("/api/auth/")) {
+    const method = new Map([
+      ["/api/auth/sign-in/email", "POST"],
+      ["/api/auth/get-session", "GET"],
+      ["/api/auth/sign-out", "POST"],
+      ["/api/auth/change-password", "POST"],
+    ]).get(url.pathname);
+    if (!method) return json({ error: "Not found" }, 404);
+    if (request.method !== method)
+      return json({ error: "Method not allowed" }, 405, { Allow: method });
+    if (method === "POST") {
+      let origin: string;
+      try {
+        origin = new URL(env.BETTER_AUTH_URL).origin;
+      } catch {
+        return json({ error: "Authentication temporarily unavailable" }, 503);
+      }
+      if (request.headers.get("Origin") !== origin)
+        return json({ error: "Origin not allowed" }, 403);
+      if (
+        request.headers.get("Content-Type")?.split(";")[0]?.trim() !==
+        "application/json"
+      )
+        return json({ error: "JSON required" }, 415);
+      try {
+        const body = await readBody(request, 8192);
+        if (!body || typeof body !== "object" || Array.isArray(body))
+          return json({ error: "Invalid request" }, 400);
+        request = new Request(request, {
+          body: JSON.stringify({
+            ...body,
+            ...(url.pathname.endsWith("/change-password")
+              ? { revokeOtherSessions: true }
+              : {}),
+          }),
+        });
+      } catch {
+        return json({ error: "Invalid request" }, 400);
+      }
+    }
+    try {
+      const response = await createAuth(env).handler(request);
+      const secured = new Response(response.body, response);
+      secured.headers.set("Cache-Control", "private, no-store");
+      secured.headers.set("Vary", "Cookie");
+      secured.headers.set("Referrer-Policy", "no-referrer");
+      return secured;
+    } catch {
+      return json({ error: "Authentication temporarily unavailable" }, 503);
+    }
+  }
+  const publicAsset =
+    url.pathname === "/login" ||
+    url.pathname === "/theme.js" ||
+    url.pathname === "/favicon.svg" ||
+    url.pathname.startsWith("/assets/") ||
+    url.pathname.startsWith("/downloads/");
+  if (!publicAsset || url.pathname.startsWith("/api/")) {
+    try {
+      const session = await createAuth(env).api.getSession({
+        headers: request.headers,
+        query: { disableCookieCache: true, disableRefresh: true },
+      });
+      if (!session) {
+        if (url.pathname.startsWith("/api/"))
+          return json({ error: "Authentication required" }, 401);
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: `/login?returnTo=${encodeURIComponent(url.pathname + url.search)}`,
+            "Cache-Control": "no-store",
+          },
+        });
+      }
+    } catch {
+      return json({ error: "Authentication temporarily unavailable" }, 503);
+    }
+  }
   if (!["GET", "HEAD"].includes(request.method))
     return json({ error: "Read-only endpoint" }, 405, { Allow: "GET, HEAD" });
   if (!url.pathname.startsWith("/api/")) {
     const asset = await env.ASSETS.fetch(request);
     const response = new Response(asset.body, asset);
     if (response.headers.get("Content-Type")?.includes("text/html"))
-      response.headers.set(
-        "Cache-Control",
-        `${asset.headers.get("Cache-Control") ?? "public, max-age=0, must-revalidate"}, no-transform`,
-      );
+      response.headers.set("Cache-Control", "private, no-store, no-transform");
     response.headers.set(
       "Content-Security-Policy",
       "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
@@ -45,7 +122,7 @@ export async function admin(
         apps: apps.results.map((row) => row.app),
         environments: ["production", "staging"],
         retentionDays: RETENTION_DAYS,
-        access: "public-read-only",
+        access: "authenticated-read-only",
       });
     }
     const filters = parseFilters(url, env.SITES);

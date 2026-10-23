@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./authenticated";
 
 const admin = "http://127.0.0.1:4176";
 test("dimension filters default to production and persist through pages, pagination and reload", async ({

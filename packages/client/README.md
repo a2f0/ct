@@ -90,8 +90,8 @@ are collected by the SDK. page defaults to '/' so dynamic routes are never infer
 
 The default CT collector adds the full request IP and approximate country,
 state/region, city, continent, and timezone when a batch arrives. These fields
-are stored for up to 90 days and exposed on the currently public dashboard and
-data API. IPs can link activity; this is not anonymous analytics. Accepted
+are stored for up to 90 days and visible to provisioned administrators on the
+authenticated dashboard and data API. The SDK sends no dashboard credentials. IPs can link activity; this is not anonymous analytics. Accepted
 batches receive this metadata even when overrideGpc is explicitly enabled.
 See the [collector data policy](https://github.com/a2f0/ct/blob/main/docs/privacy.md)
 when deciding what to disclose to your site's visitors.

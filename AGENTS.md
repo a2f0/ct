@@ -18,9 +18,13 @@ Use the installed ship-pr skill; prepare client versions against the fetched bas
 with agent-tool versions prepare. Merge does not deploy the Workers. Deploy only
 when requested, using bun run deploy; bun run deploy:preview changes no remote state.
 
-The admin UI and its data API are intentionally public and read-only for the
-initial release. Do not add authentication without a request. Do not add raw text,
-form values, URLs, user identifiers, or persistent visitor identifiers to clicks.
+The admin UI and every data API require a provisioned Better Auth session; data
+access remains read-only. Registration is disabled in the auth configuration and
+Worker route allowlist. Accounts are created/reset only through the operator CLI,
+which uses bound D1 statements and hidden prompts or stdin, never password args.
+Keep auth tables separate from clicks; an administrator's account/session is not
+a visitor identifier. Never expose data or site metadata before authorization.
+Do not add raw text, form values, URLs, user identifiers, or persistent visitor identifiers to clicks.
 The only exception is server-recorded request IP addresses and coarse Cloudflare
 location metadata as documented in docs/privacy.md. Do not add separate visitor
 profiles, session identifiers, hashed IP identifiers, or browser fingerprints.

@@ -53,9 +53,14 @@
         "https://website-staging.balebase.com": "staging",
         "https://app-staging.balebase.com": "staging"
       }
-    }
+    },
+    "BETTER_AUTH_URL": "https://ct-admin.a2f0.net"
   },
   "observability": {
     "enabled": false
+  },
+  "compatibility_flags": ["nodejs_compat"],
+  "limits": {
+    "cpu_ms": 30000
   }
 }

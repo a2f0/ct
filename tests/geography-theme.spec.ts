@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
 import type { ClickRow, Summary } from "../packages/admin/src/data";
+import { expect, test } from "./authenticated";
 
 const admin = "http://127.0.0.1:4176";
 const location = {

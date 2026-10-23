@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { type Events, getData, type Summary } from "./data";
 import { Overview } from "./Overview";
 import { RecentClicks } from "./RecentClicks";
+import { SignOut } from "./SignOut";
 import { ThemeSwitch } from "./ThemeSwitch";
 
 type Report = {
@@ -167,9 +168,9 @@ export function App() {
           </a>
         </nav>
         <div className="sidebar-bottom">
-          <span className="status-dot" /> Public · read only
+          <span className="status-dot" /> Private · read only
           <p>
-            No accounts. No visitor profiles.
+            Authenticated access. No visitor profiles.
             <br />
             Just where the clicks land.
           </p>
@@ -181,6 +182,8 @@ export function App() {
           <div className="topbar-actions">
             <span className="pill">90-day retention</span>
             <ThemeSwitch />
+            <a href="/account">Account</a>
+            <SignOut />
           </div>
         </header>
         <section className="heading">

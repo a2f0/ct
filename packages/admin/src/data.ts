@@ -53,8 +53,10 @@ export async function getData<T>(
 ): Promise<T> {
   const response = await fetch(path, {
     signal: signal ?? null,
-    credentials: "omit",
+    credentials: "same-origin",
   });
+  if (response.status === 401)
+    window.dispatchEvent(new Event("ct:session-expired"));
   if (!response.ok)
     throw new Error(
       response.status === 429

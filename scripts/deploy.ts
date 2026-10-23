@@ -19,6 +19,11 @@ if (
 if (canonicalSites(api.vars?.SITES) !== canonicalSites(admin.vars?.SITES))
   throw new Error("Both Workers must register the same sites and origins.");
 
+if (admin.vars?.BETTER_AUTH_URL !== `https://${admin.routes?.[0]?.pattern}`)
+  throw new Error(
+    "Admin authentication URL must match its HTTPS custom domain.",
+  );
+
 async function run(args: string[], cwd = root) {
   const child = Bun.spawn(args, {
     cwd,
@@ -52,6 +57,32 @@ if (preview) {
   );
   console.log("Preview complete: no remote resources changed.");
 } else {
+  const secrets = Bun.spawn(
+    [
+      "bunx",
+      "--no-install",
+      "wrangler",
+      "secret",
+      "list",
+      "--config",
+      "wrangler.admin.json",
+    ],
+    {
+      cwd,
+      stdout: "pipe",
+      stderr: "inherit",
+    },
+  );
+  const names = await new Response(secrets.stdout).text();
+  if (
+    (await secrets.exited) !== 0 ||
+    !(JSON.parse(names) as { name: string }[]).some(
+      (secret) => secret.name === "BETTER_AUTH_SECRET",
+    )
+  )
+    throw new Error(
+      "Configure the CT-only BETTER_AUTH_SECRET before deployment.",
+    );
   await run(
     [
       "bunx",
@@ -78,6 +109,6 @@ if (preview) {
     cwd,
   );
   console.log(
-    "Deployment complete. Verify ct.a2f0.net/health and ct-admin.a2f0.net/api/sites.",
+    "Deployment complete. Verify collector /health, anonymous admin data 401s, login, and authenticated read-only access.",
   );
 }

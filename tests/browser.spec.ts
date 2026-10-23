@@ -1,6 +1,6 @@
 import { isIP } from "node:net";
-import { expect, test } from "@playwright/test";
 import type { Tracker } from "../packages/client/src/types";
+import { expect, test } from "./authenticated";
 
 declare global {
   interface Window {

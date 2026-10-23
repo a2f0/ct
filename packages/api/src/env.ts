@@ -8,6 +8,8 @@ export interface Env {
 }
 
 export interface AdminEnv {
+  BETTER_AUTH_URL: string;
+  BETTER_AUTH_SECRET: string;
   DB: D1Database;
   SITES: Sites;
   ASSETS: Fetcher;

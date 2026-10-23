@@ -24,6 +24,12 @@ export async function database() {
       return {
         success: true,
         results: sqlite.query(this.sql).all(...this.values),
+        meta: {
+          changes: (
+            sqlite.query("SELECT changes() AS n").get() as { n: number }
+          ).n,
+          last_row_id: 0,
+        },
       };
     }
     async run() {
@@ -31,6 +37,10 @@ export async function database() {
     }
   }
   const db = {
+    exec: async (sql: string) => {
+      sqlite.exec(sql);
+      return { count: 1, duration: 0 };
+    },
     prepare: (sql: string) => new Statement(sql),
     batch: async (statements: Statement[]) => {
       if (statements.length > 50)
@@ -39,6 +49,12 @@ export async function database() {
         statements.map((statement) => ({
           success: true,
           results: sqlite.query(statement.sql).all(...statement.values),
+          meta: {
+            changes: (
+              sqlite.query("SELECT changes() AS n").get() as { n: number }
+            ).n,
+            last_row_id: 0,
+          },
         })),
       )();
     },

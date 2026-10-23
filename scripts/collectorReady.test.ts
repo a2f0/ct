@@ -3,10 +3,14 @@ import { expect, test } from "bun:test";
 import { collectorReady, waitForCollector } from "./collectorReady";
 
 const origins = ["https://a.example", "https://staging.a.example"];
-function fetcher(protocolVersion: unknown, allow = true) {
+function fetcher(protocolVersion: unknown, allow = true, adminStatus = 401) {
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (String(input).endsWith("/health"))
       return Response.json({ protocolVersion });
+    if (String(input).startsWith("https://ct-admin.a2f0.net")) {
+      expect(init?.credentials).toBe("omit");
+      return new Response(null, { status: adminStatus });
+    }
     expect(init?.method).toBe("OPTIONS");
     const origin = new Headers(init?.headers).get("Origin") ?? "";
     return new Response(null, {
@@ -21,6 +25,8 @@ test("publication requires a compatible collector and exact origin preflights", 
   expect(await collectorReady(origins, fetcher(2))).toBe(true);
   expect(await collectorReady(origins, fetcher(3))).toBe(true);
   expect(await collectorReady(origins, fetcher(2, false))).toBe(false);
+  for (const status of [200, 302, 403, 404, 503])
+    expect(await collectorReady(origins, fetcher(2, true, status))).toBe(false);
   expect(
     await collectorReady(origins, (async () => {
       throw new Error("offline");
