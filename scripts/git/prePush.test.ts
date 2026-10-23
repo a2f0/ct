@@ -82,10 +82,23 @@ test("pre-push checks the pushed commits even when HEAD is different", async () 
         `refs/heads/feat/forbidden ${forbidden} refs/heads/feat/forbidden ${destination}\n`,
       );
       expect(rejected.exitCode).not.toBe(0);
+      expect(rejected.stdout.toString() + rejected.stderr.toString()).toContain(
+        "Co-authored-by",
+      );
       expect(await Bun.file(resolve(directory, "verified")).exists()).toBe(
         false,
       );
     }
+    const multiple = command(
+      ["sh", hook, "origin"],
+      `refs/heads/main ${head} refs/heads/feat/valid ${zero}\n` +
+        `refs/heads/feat/forbidden ${forbidden} refs/heads/feat/forbidden ${zero}\n`,
+    );
+    expect(multiple.exitCode).not.toBe(0);
+    expect(multiple.stdout.toString() + multiple.stderr.toString()).toContain(
+      "Co-authored-by",
+    );
+    await rm(resolve(directory, "verified"), { force: true });
     const accepted = command(
       ["sh", hook, "origin"],
       `refs/heads/main ${head} refs/heads/feat/valid ${zero}\n`,

@@ -11,12 +11,12 @@ printf '%s\n' "$refs" | while read -r local_ref local_oid _remote_ref remote_oid
   [ -n "$local_ref" ] || continue
   [ "$local_oid" != "$zero" ] || continue
   if [ "$remote_oid" != "$zero" ]; then
-    bun run agent-tool commits check --range "$local_oid" --exclude "$remote_oid"
+    bun run agent-tool commits check --range "$local_oid" --exclude "$remote_oid" </dev/null
   elif git remote get-url "$remote" >/dev/null 2>&1; then
-    bun run agent-tool commits check --range "$local_oid" --exclude-remotes "$remote"
+    bun run agent-tool commits check --range "$local_oid" --exclude-remotes "$remote" </dev/null
   else
     # A URL destination has no tracking refs; inspect every reachable commit.
-    bun run agent-tool commits check --range "$local_oid"
+    bun run agent-tool commits check --range "$local_oid" </dev/null
   fi
 done
 bun run verify
