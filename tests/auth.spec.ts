@@ -65,13 +65,16 @@ async function account(
   expect(output.trim() === expected).toBe(true);
 }
 // Record PasswordCredential saves in both engines; Firefox lacks the API.
-async function recordSavedPasswords(page: Page) {
+async function recordSavedPasswords(
+  page: Page,
+  outcome: "saved" | "rejected" = "saved",
+) {
   const saved: { id: string; password: string }[] = [];
   await page.exposeFunction(
     "ctRecordSavedPassword",
     (id: string, password: string) => saved.push({ id, password }),
   );
-  await page.addInitScript(() => {
+  await page.addInitScript((outcome) => {
     const record = (
       window as unknown as {
         ctRecordSavedPassword: (id: string, password: string) => Promise<void>;
@@ -92,11 +95,13 @@ async function recordSavedPasswords(page: Page) {
     Object.defineProperty(navigator.credentials, "store", {
       value: async (credential: PasswordCredential) => {
         await record(credential.id, credential.password);
+        if (outcome === "rejected")
+          throw new DOMException("Saving declined", "NotAllowedError");
         return credential;
       },
       configurable: true,
     });
-  });
+  }, outcome);
   return saved;
 }
 async function signIn(page: Page, email: string, password: string) {
@@ -286,6 +291,51 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
   );
   expect(errors).toEqual([]);
 });
+
+for (const outcome of ["missing", "rejected"] as const) {
+  test(`sign-in and password changes finish when credential saving is ${outcome}`, async ({
+    page,
+    context,
+  }, info) => {
+    test.setTimeout(60_000);
+    const email = `saving-${outcome}-${info.project.name}-${crypto.randomUUID()}@example.test`;
+    await account("create", email, initialPassword);
+    await context.setExtraHTTPHeaders({
+      "CF-Connecting-IP": `203.0.113.${(outcome === "missing" ? 41 : 43) + (info.project.name === "chromium" ? 0 : 1)}`,
+    });
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    const saved =
+      outcome === "rejected" ? await recordSavedPasswords(page, outcome) : [];
+    if (outcome === "missing")
+      await page.addInitScript(() => {
+        delete (window as { PasswordCredential?: unknown }).PasswordCredential;
+      });
+    await page.goto(`${admin}/`);
+    expect(await page.evaluate(() => "PasswordCredential" in window)).toBe(
+      outcome === "rejected",
+    );
+    await signIn(page, email, initialPassword);
+    await page.getByRole("link", { name: "Account", exact: true }).click();
+    await page
+      .getByLabel("Current password", { exact: true })
+      .fill(initialPassword);
+    await page
+      .getByLabel("New password", { exact: true })
+      .fill(changedPassword);
+    await page
+      .getByLabel("Confirm new password", { exact: true })
+      .fill(changedPassword);
+    await page
+      .getByRole("button", { name: "Change password", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toHaveText(
+      "Password changed. Other sessions have been signed out.",
+    );
+    expect(saved.length).toBe(outcome === "rejected" ? 2 : 0);
+    expect(errors).toEqual([]);
+  });
+}
 
 test("sign-in service errors are distinguished from invalid credentials", async ({
   page,
