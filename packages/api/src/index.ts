@@ -1,12 +1,15 @@
-import { DAY, type Env, json, RETENTION_DAYS } from "./env";
+import { DAY, type Env, json, NOINDEX, RETENTION_DAYS } from "./env";
 import { requestLocation } from "./location";
 import { normalizeTimes, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
   if (path === "/health" && request.method === "GET")
-    return json({ ok: true, protocolVersion: 2 });
-  if (path !== "/v1/clicks") return json({ error: "Not found" }, 404);
+    return json({ ok: true, protocolVersion: 2 }, 200, {
+      "X-Robots-Tag": NOINDEX,
+    });
+  if (path !== "/v1/clicks")
+    return json({ error: "Not found" }, 404, { "X-Robots-Tag": NOINDEX });
   const origin = request.headers.get("Origin");
   if (
     !origin ||

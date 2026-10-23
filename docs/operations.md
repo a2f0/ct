@@ -27,8 +27,9 @@ Worker deletes events older than 90 days at 03:17 UTC daily.
 
 After deploying, verify GET /health on the collector, unauthenticated 401s for
 /api/sites, /api/summary and /api/events on the admin host, a redirect to /login
-for /recent, and unauthenticated 200s for /favicon.ico, /favicon.svg and
-/apple-touch-icon.png. In a signed-in session, verify those GET APIs return 200 and
+for /recent, unauthenticated 200s for /favicon.ico, /favicon.svg,
+/apple-touch-icon.png and /robots.txt, and X-Robots-Tag: noindex, nofollow on
+admin responses. In a signed-in session, verify those GET APIs return 200 and
 POST /api/events returns 405. Do not generate production clicks
 as part of normal tests. A consumer's origin must be listed under its site key in
 both configs, mapped to production or staging. Public site identifiers are not credentials.
@@ -36,6 +37,14 @@ both configs, mapped to production or staging. Public site identifiers are not c
 Dashboard HTML uses Cache-Control: no-transform to prevent Cloudflare's automatic
 Web Analytics beacon injection, while the CSP permits only our own scripts.
 This follows Cloudflare's [Web Analytics setup guidance](https://developers.cloudflare.com/web-analytics/get-started/).
+
+Neither host belongs in search results. Every admin Worker response, including
+redirects, auth replies and errors, carries X-Robots-Tag: noindex, nofollow, and
+the dashboard HTML has the matching robots meta tag. The admin robots.txt is
+public, allows crawling and names no sitemap: a crawler that robots.txt blocks
+never sees the noindex, so linked URLs could still be indexed. The collector adds
+the same header to /health and unknown paths only; ingestion and CORS responses
+are unchanged, and it serves no robots.txt of its own.
 
 ## Administrator accounts
 

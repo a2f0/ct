@@ -1,12 +1,20 @@
 import { createAuth } from "./auth";
-import { type AdminEnv, DAY, json, RETENTION_DAYS } from "./env";
+import { type AdminEnv, DAY, json, NOINDEX, RETENTION_DAYS } from "./env";
 import { parseFilters, recent, summary } from "./queries";
 import { readBody } from "./validation";
 
+// Every dashboard response, including redirects, auth replies, errors and the
+// sign-in page, keeps the private host out of search indexes.
 export async function admin(
   request: Request,
   env: AdminEnv,
 ): Promise<Response> {
+  const response = await route(request, env);
+  response.headers.set("X-Robots-Tag", NOINDEX);
+  return response;
+}
+
+async function route(request: Request, env: AdminEnv): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname.startsWith("/api/auth/")) {
     const method = new Map([
@@ -61,6 +69,7 @@ export async function admin(
   }
   const publicAsset =
     url.pathname === "/login" ||
+    url.pathname === "/robots.txt" ||
     url.pathname === "/theme.js" ||
     url.pathname === "/favicon.svg" ||
     url.pathname === "/favicon.ico" ||
