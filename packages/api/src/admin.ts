@@ -63,6 +63,8 @@ export async function admin(
     url.pathname === "/login" ||
     url.pathname === "/theme.js" ||
     url.pathname === "/favicon.svg" ||
+    url.pathname === "/favicon.ico" ||
+    url.pathname === "/apple-touch-icon.png" ||
     url.pathname.startsWith("/assets/") ||
     url.pathname.startsWith("/downloads/");
   if (!publicAsset || url.pathname.startsWith("/api/")) {

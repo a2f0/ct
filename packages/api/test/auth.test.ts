@@ -56,6 +56,7 @@ function call(
     env,
   );
 }
+const FAVICONS = ["/favicon.ico", "/favicon.svg", "/apple-touch-icon.png"];
 const login = (password = TEST_ACCOUNT.password) =>
   call("/api/auth/sign-in/email", {
     method: "POST",
@@ -106,6 +107,23 @@ test("all analytics API methods deny unauthenticated access; deep links redirect
     "private, no-store, no-transform",
   );
 });
+test("favicons load without a session so the login page shows them; similar paths stay private", async () => {
+  for (const path of FAVICONS)
+    for (const method of ["GET", "HEAD"]) {
+      const response = await call(path, { method });
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Location")).toBeNull();
+    }
+  for (const path of [
+    "/favicon.png",
+    "/favicon.svg/recent",
+    "/apple-touch-icon-precomposed.png",
+  ]) {
+    const response = await call(path);
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toStartWith("/login?returnTo=");
+  }
+});
 test("missing signing secret fails closed without disclosing private data", async () => {
   env.BETTER_AUTH_SECRET = "";
   for (const path of [
@@ -121,14 +139,15 @@ test("missing signing secret fails closed without disclosing private data", asyn
     expect(response.headers.get("Cache-Control")).toContain("no-store");
     expect(await response.text()).not.toContain("skyline");
   }
-  expect((await call("/login")).status).toBe(200);
+  for (const path of ["/login", ...FAVICONS])
+    expect((await call(path)).status).toBe(200);
 });
 test("invalid auth origin fails closed while public login and downloads remain available", async () => {
   env.BETTER_AUTH_URL = "://invalid";
   for (const path of ["/recent", "/api/sites", "/api/auth/get-session"])
     expect((await call(path)).status).toBe(503);
   expect((await login()).status).toBe(503);
-  for (const path of ["/login", "/downloads/ct-chrome.zip"])
+  for (const path of ["/login", "/downloads/ct-chrome.zip", ...FAVICONS])
     expect((await call(path)).status).toBe(200);
 });
 test("signup is disabled in routing and in the auth library; mutation origins and media types are enforced", async () => {
