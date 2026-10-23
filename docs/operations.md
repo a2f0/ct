@@ -1,6 +1,6 @@
 # Operations
 
-For endpoint behavior, retention, and dashboard dimensions, see the
+For endpoint behavior and dashboard dimensions, see the
 [API guide](api.md). The [privacy guide](privacy.md) defines collection limits.
 
 ## Cloudflare
