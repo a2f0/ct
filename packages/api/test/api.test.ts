@@ -175,6 +175,21 @@ test("enforces batch and byte limits and handles CORS preflight", async () => {
   expect(response.headers.get("Access-Control-Allow-Origin")).toBe(origin);
 });
 
+test("collector health and unknown paths are marked noindex", async () => {
+  for (const [path, status] of [
+    ["/health", 200],
+    ["/", 404],
+    ["/robots.txt", 404],
+  ] as const) {
+    const response = await ingest(
+      new Request(`https://ct.a2f0.net${path}`),
+      env,
+    );
+    expect(response.status).toBe(status);
+    expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+  }
+});
+
 test("storage failure is retriable; rate limits prevent writes", async () => {
   env.INGEST_LIMITER = { limit: async () => ({ success: false }) };
   const limited = await ingest(

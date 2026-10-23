@@ -31,5 +31,9 @@ export function json(
   });
 }
 
+// Neither Worker serves pages meant for search results. Crawling stays
+// allowed so that search engines can read this header.
+export const NOINDEX = "noindex, nofollow";
+
 export const RETENTION_DAYS = 90;
 export const DAY = 86_400_000;

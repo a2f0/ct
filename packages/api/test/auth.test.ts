@@ -124,6 +124,35 @@ test("favicons load without a session so the login page shows them; similar path
     expect(response.headers.get("Location")).toStartWith("/login?returnTo=");
   }
 });
+test("every dashboard response is marked noindex and robots.txt is public", async () => {
+  await provisionAccount(env.DB, { action: "create", ...TEST_ACCOUNT });
+  const signIn = await login();
+  expect(signIn.status).toBe(200);
+  const cookie = cookieOf(signIn);
+  const responses: [string, Response, number][] = [
+    ["sign-in page", await call("/login"), 200],
+    ["robots.txt", await call("/robots.txt"), 200],
+    ["private page redirect", await call("/recent"), 302],
+    ["anonymous data", await call("/api/sites"), 401],
+    ["auth reply", signIn, 200],
+    ["session check", await call("/api/auth/get-session"), 200],
+    ["closed auth route", await call("/api/auth/sign-up/email"), 404],
+    ["read-only page", await call("/login", { method: "POST" }), 405],
+    ["signed-in page", await call("/", { cookie }), 200],
+    ["signed-in data", await call("/api/sites", { cookie }), 200],
+  ];
+  env.READ_LIMITER = { limit: async () => ({ success: false }) };
+  responses.push(["rate limit", await call("/api/sites", { cookie }), 429]);
+  env.BETTER_AUTH_SECRET = "";
+  responses.push(["auth outage", await call("/recent"), 503]);
+  for (const [name, response, status] of responses) {
+    expect({ name, status: response.status }).toEqual({ name, status });
+    expect({ name, robots: response.headers.get("X-Robots-Tag") }).toEqual({
+      name,
+      robots: "noindex, nofollow",
+    });
+  }
+});
 test("missing signing secret fails closed without disclosing private data", async () => {
   env.BETTER_AUTH_SECRET = "";
   for (const path of [

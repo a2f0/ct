@@ -218,6 +218,29 @@ test("unauthenticated Worker denies every data method, redirects deep links, and
   ).toBe(true);
 });
 
+test("the private dashboard is noindexed and its robots.txt still allows crawling", async ({
+  page,
+  request,
+}) => {
+  const robots = await request.get(`${admin}/robots.txt`, { maxRedirects: 0 });
+  expect(robots.status()).toBe(200);
+  expect(robots.headers()["content-type"]).toContain("text/plain");
+  expect(robots.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+  const rules = await robots.text();
+  expect(rules).toMatch(/^User-agent: \*$/m);
+  expect(rules).not.toMatch(/^Disallow:/im);
+  expect(rules).not.toContain("Sitemap:");
+  const redirect = await request.get(`${admin}/`, { maxRedirects: 0 });
+  expect(redirect.status()).toBe(302);
+  expect(redirect.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+  const login = await page.goto(`${admin}/login`);
+  expect(login?.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "noindex, nofollow",
+  );
+});
+
 test("CLI accounts log in, change passwords, logout, reset and clear expired private state", async ({
   page,
   context,
