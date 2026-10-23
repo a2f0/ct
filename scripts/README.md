@@ -36,3 +36,8 @@ the pinned agent-tool; repository-specific behavior stays here.
 See [repository guidance](../AGENTS.md) for required checks and shipping policy,
 [operations](../docs/operations.md) for deployment and account commands, and the
 [API guide](../docs/api.md) for endpoint behavior.
+
+Pre-push validates commits newly introduced to a named remote. It excludes that
+remote's tracking refs even when updating an existing branch, so a normal merge
+of main does not recheck already published commits. URL-only destinations use
+the advertised previous tip, or all history on a first push.
