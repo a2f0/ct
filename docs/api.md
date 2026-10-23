@@ -85,6 +85,8 @@ Dark Graphite is the default dashboard theme, using a2f0.net's charcoal palette.
 The top-bar switch selects light or dark and persists ct.theme in localStorage;
 the switch still works if storage is blocked. The external theme.js script
 restores the choice before styles load while honoring the existing script CSP.
+It also owns the theme-color tag, which follows data-theme so browser chrome
+matches the page background in either theme.
 
 ## App and environment dimensions
 

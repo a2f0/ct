@@ -130,12 +130,14 @@ test("Graphite defaults to dark and the keyboard theme switch persists through r
   await page.route("**/api/summary?**", (route) =>
     route.fulfill({ json: summary }),
   );
+  const themeColor = page.locator('meta[name="theme-color"]');
   await page.goto(admin);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("body")).toHaveCSS(
     "background-color",
     "rgb(0, 0, 0)",
   );
+  await expect(themeColor).toHaveAttribute("content", "#000");
   await expect(page.locator(".metric").first()).toHaveCSS(
     "background-color",
     "rgb(22, 22, 22)",
@@ -147,6 +149,7 @@ test("Graphite defaults to dark and the keyboard theme switch persists through r
     "background-color",
     "rgb(238, 238, 238)",
   );
+  await expect(themeColor).toHaveAttribute("content", "#eee");
   expect(await page.evaluate(() => localStorage.getItem("ct.theme"))).toBe(
     "light",
   );
@@ -160,9 +163,11 @@ test("Graphite defaults to dark and the keyboard theme switch persists through r
   await expect(
     page.getByRole("button", { name: "Switch to dark mode" }),
   ).toBeVisible();
+  await expect(themeColor).toHaveAttribute("content", "#eee");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Switch to dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(themeColor).toHaveAttribute("content", "#000");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -188,11 +193,15 @@ test("theme controls work when storage is blocked", async ({ page }) => {
   });
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  const themeColor = page.locator('meta[name="theme-color"]');
   await page.goto(admin);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(themeColor).toHaveAttribute("content", "#000");
   await page.getByRole("button", { name: "Switch to light mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(themeColor).toHaveAttribute("content", "#eee");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(themeColor).toHaveAttribute("content", "#000");
   expect(errors).toEqual([]);
 });
