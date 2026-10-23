@@ -90,6 +90,7 @@ bun run test:browser
 ```
 
 Use bun run agent:run --label tests -- bun run test for compact output and private
-full logs. [Operations](docs/operations.md) covers deployment, the initial npm
-publication, account provisioning, and the authenticated read-only API. [Privacy](docs/privacy.md) describes
-the exact data and delivery limits.
+full logs. [Repository scripts](scripts/README.md) describes the internal tooling
+layout. [Operations](docs/operations.md) covers deployment, npm publication, and
+account provisioning. The [API guide](docs/api.md) describes endpoint behavior and
+dashboard dimensions; [Privacy](docs/privacy.md) defines data and delivery limits.

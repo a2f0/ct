@@ -5,5 +5,5 @@
     "lib": ["ESNext", "DOM"],
     "allowImportingTsExtensions": true
   },
-  "include": ["*.ts", "../tests/*.ts", "../playwright.config.ts"]
+  "include": ["**/*.ts", "../tests/*.ts", "../playwright.config.ts"]
 }

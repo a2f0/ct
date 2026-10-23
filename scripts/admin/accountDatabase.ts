@@ -2,14 +2,14 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import type { PlatformProxy } from "wrangler";
-import type { AccountDatabase } from "../packages/api/src/accounts";
+import type { AccountDatabase } from "../../packages/api/src/accounts";
 
 /** Wrangler owns OAuth credentials; this never reads or exposes their values. */
 export async function withAccountDatabase<T>(
   options: { remote: boolean; test?: boolean },
   work: (db: AccountDatabase) => Promise<T>,
 ): Promise<T> {
-  const root = resolve(import.meta.dirname, "..");
+  const root = resolve(import.meta.dirname, "../..");
   const source = options.test
     ? "tests/wrangler.api.json"
     : "packages/api/wrangler.json";

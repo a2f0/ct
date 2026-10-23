@@ -2,7 +2,7 @@ import { appendFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const pkg = await Bun.file(
-  resolve(import.meta.dir, "../packages/client/package.json"),
+  resolve(import.meta.dir, "../../packages/client/package.json"),
 ).json();
 const response = await fetch(
   `https://registry.npmjs.org/${encodeURIComponent(pkg.name)}/${pkg.version}`,
