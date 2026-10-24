@@ -10,6 +10,7 @@
     "android:build-release-apk": "NATIVE_RELEASE_TIER=production bundle exec fastlane android build_release_apk",
     "android:install-debug": "NATIVE_RELEASE_TIER=production bundle exec fastlane android install_debug",
     "android:install-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane android install_release",
+    "android:readiness": "NATIVE_RELEASE_TIER=production bundle exec fastlane android readiness",
     "android:sideload": "NATIVE_RELEASE_TIER=production bundle exec fastlane android sideload",
     "android:upload-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane android upload_release",
     "build": "tsc --noEmit && vite build",
@@ -24,6 +25,7 @@
     "ios:build-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios build_release",
     "ios:fetch-profiles": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios fetch_profiles",
     "ios:profiles": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios profiles",
+    "ios:readiness": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios readiness",
     "ios:upload-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios upload_release",
     "lint:rubocop": "bundle exec rubocop",
     "store:build-numbers": "NATIVE_RELEASE_TIER=production bundle exec fastlane store_build_numbers"
@@ -31,6 +33,7 @@
   "dependencies": {
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
+    "@capacitor/text-zoom": "8.0.1",
     "@ct/admin": "workspace:*"
   },
   "devDependencies": {

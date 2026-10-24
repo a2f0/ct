@@ -103,7 +103,8 @@ test("NATIVE_RELEASE_SECRETS_DIR replaces the production secrets folder", async 
 });
 
 // The lanes docs/fastlane.md in a2f0/matrix requires, plus the optional
-// profile, build number, and Android development lanes this repository keeps.
+// profile, build number, readiness, and Android development lanes this
+// repository keeps.
 const expectedLanes = {
   general: ["store_build_numbers"],
   android: [
@@ -113,11 +114,18 @@ const expectedLanes = {
     "clean",
     "install_debug",
     "install_release",
+    "readiness",
     "sideload",
     "test",
     "upload_release",
   ],
-  ios: ["build_release", "fetch_profiles", "profiles", "upload_release"],
+  ios: [
+    "build_release",
+    "fetch_profiles",
+    "profiles",
+    "readiness",
+    "upload_release",
+  ],
 };
 
 test("Fastlane declares the standard production lanes", async () => {

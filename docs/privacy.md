@@ -96,6 +96,11 @@ analytics or crash-reporting SDK, and keeps its theme preference in the
 WebView's local storage. Its iOS privacy manifest declares only the
 administrator email address, linked to the account for app functionality.
 
+The public privacy policy at /privacy on the dashboard host
+(packages/admin/src/Policies.tsx) summarizes this document for the store
+listings and the app; change it in the same commit as any change here that it
+describes.
+
 
 App attribution comes only from the explicit tracker app option or the nearest
 valid data-ct-app boundary, never from DOM text, IDs, class names, or iframe URLs.

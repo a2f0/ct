@@ -329,13 +329,18 @@ export function App() {
           <span>
             ct. <span className="muted">Keep it simple. Make it count.</span>
           </span>
-          {/* The app shell bundles no desktop browser extensions. */}
-          {!nativeDashboard && (
-            <span className="downloads">
-              Browser opt-out: <a href="/downloads/ct-chrome.zip">Chrome ZIP</a>{" "}
-              · <a href="/downloads/ct-firefox.zip">Firefox ZIP</a>
-            </span>
-          )}
+          <span className="downloads">
+            {/* The app shell bundles no desktop browser extensions. */}
+            {!nativeDashboard && (
+              <>
+                Browser opt-out:{" "}
+                <a href="/downloads/ct-chrome.zip">Chrome ZIP</a> ·{" "}
+                <a href="/downloads/ct-firefox.zip">Firefox ZIP</a> ·{" "}
+              </>
+            )}
+            <a href="/privacy">Privacy policy</a> ·{" "}
+            <a href="/support">Support</a>
+          </span>
         </footer>
       </main>
     </div>

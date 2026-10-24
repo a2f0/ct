@@ -959,3 +959,16 @@ footer .muted {
 .auth-card .muted {
   line-height: 1.7;
 }
+.policy h2 {
+  margin: 24px 0 8px;
+}
+.policy p {
+  line-height: 1.7;
+}
+.policy-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 24px;
+  font-size: 13px;
+}
