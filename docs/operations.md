@@ -28,7 +28,7 @@ Worker deletes events older than 90 days at 03:17 UTC daily.
 After deploying, verify GET /health on the collector, unauthenticated 401s for
 /api/sites, /api/summary, /api/events and POST /api/forget on the admin host, a
 redirect to /login for /recent, unauthenticated 200s for /favicon.ico, /favicon.svg,
-/apple-touch-icon.png and /robots.txt, and X-Robots-Tag: noindex, nofollow on
+/apple-touch-icon.png, /robots.txt, /privacy and /support, and X-Robots-Tag: noindex, nofollow on
 admin responses. In a signed-in session, verify those GET APIs return 200 and
 POST /api/events returns 405. Do not generate production clicks
 as part of normal tests. A consumer's origin must be listed under its site key in
@@ -78,7 +78,9 @@ then applies migrations before uploading either Worker. A missing
 or invalid auth secret fails closed: private routes return 503, never analytics.
 Unauthenticated data requests return 401 with no site names or event metadata;
 private page routes redirect to /login with a same-origin return path. Public
-static assets and extension downloads contain no click data. The admin dev and
+static assets and extension downloads contain no click data. The privacy policy
+and support pages at /privacy and /support, which the store listings and the
+app link to, render from the bundle without a session and request no data. The admin dev and
 build scripts render the favicons from assets/brand/logo.svg with the
 agent-tool.json favicons target into ignored packages/admin/public files; the
 Worker serves only those exact icon paths before sign-in.

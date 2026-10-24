@@ -80,8 +80,11 @@ async function route(request: Request, env: AdminEnv): Promise<Response> {
       return json({ error: "Authentication temporarily unavailable" }, 503);
     }
   }
+  // The policy pages hold no data; the store listings link to them.
   const publicAsset =
     url.pathname === "/login" ||
+    url.pathname === "/privacy" ||
+    url.pathname === "/support" ||
     url.pathname === "/robots.txt" ||
     url.pathname === "/theme.js" ||
     url.pathname === "/favicon.svg" ||

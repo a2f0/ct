@@ -1,8 +1,8 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { App } from "./App";
 import { authClient, rememberPassword, returnTo } from "./authClient";
+import { Frame, PolicyLinks } from "./Frame";
 import { SignOut } from "./SignOut";
-import { ThemeSwitch } from "./ThemeSwitch";
 
 export function AuthGate() {
   const { data: session, isPending, error } = authClient.useSession();
@@ -39,19 +39,6 @@ export function AuthGate() {
     <Account email={session.user.email} />
   ) : (
     <App />
-  );
-}
-function Frame({ children }: { children: ReactNode }) {
-  return (
-    <main className="auth-shell">
-      <header className="auth-header">
-        <a className="brand" href="/">
-          ct<span className="brand-dot">.</span>
-        </a>
-        <ThemeSwitch />
-      </header>
-      <section className="card auth-card">{children}</section>
-    </main>
   );
 }
 function Login({
@@ -142,6 +129,7 @@ function Login({
         Accounts are provisioned by your administrator. Contact them if you need
         access or a password reset.
       </p>
+      <PolicyLinks />
     </Frame>
   );
 }
@@ -254,6 +242,7 @@ function Account({ email }: { email: string }) {
         </button>
       </form>
       <SignOut />
+      <PolicyLinks />
     </Frame>
   );
 }

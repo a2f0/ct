@@ -124,6 +124,21 @@ test("favicons load without a session so the login page shows them; similar path
     expect(response.headers.get("Location")).toStartWith("/login?returnTo=");
   }
 });
+test("the policy pages load without a session; similar paths stay private", async () => {
+  for (const path of ["/privacy", "/support"])
+    for (const method of ["GET", "HEAD"]) {
+      const response = await call(path, { method });
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Location")).toBeNull();
+      expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+    }
+  for (const path of ["/privacy/recent", "/support.html", "/privacy-policy"]) {
+    const response = await call(path);
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toStartWith("/login?returnTo=");
+  }
+  expect((await call("/privacy", { method: "POST" })).status).toBe(405);
+});
 test("every dashboard response is marked noindex and robots.txt is public", async () => {
   await provisionAccount(env.DB, { action: "create", ...TEST_ACCOUNT });
   const signIn = await login();

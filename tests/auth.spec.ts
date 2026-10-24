@@ -241,6 +241,51 @@ test("the private dashboard is noindexed and its robots.txt still allows crawlin
   );
 });
 
+test("the privacy policy and support pages open from sign-in without a session or data", async ({
+  page,
+}, info) => {
+  // Only requests the policy pages themselves make; the sign-in page checks
+  // for a session.
+  const apiRequests: string[] = [];
+  page.on("request", (request) => {
+    const from = new URL(request.frame().url()).pathname;
+    if (
+      ["/privacy", "/support"].includes(from) &&
+      new URL(request.url()).pathname.startsWith("/api/")
+    )
+      apiRequests.push(request.url());
+  });
+  await page.goto(`${admin}/login`);
+  const policies = page.getByRole("navigation", { name: "Policies" });
+  await policies.getByRole("link", { name: "Privacy policy" }).click();
+  await expect(page).toHaveURL(`${admin}/privacy`);
+  await expect(
+    page.getByRole("heading", { name: "Privacy policy.", level: 1 }),
+  ).toBeVisible();
+  await expect(page).toHaveTitle("Privacy policy · CT");
+  await expect(
+    page.getByRole("link", { name: "support@a2f0.net" }),
+  ).toHaveAttribute("href", "mailto:support@a2f0.net");
+  await page.getByRole("link", { name: "Support", exact: true }).click();
+  await expect(page).toHaveURL(`${admin}/support`);
+  await expect(
+    page.getByRole("heading", { name: "Support.", level: 1 }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto(`${admin}/privacy`);
+  await page.waitForLoadState("networkidle");
+  expect(apiRequests).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `test-results/privacy-compact-${info.project.name}.png`,
+    fullPage: true,
+  });
+});
+
 test("CLI accounts log in, change passwords, logout, reset and clear expired private state", async ({
   page,
   context,
