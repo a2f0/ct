@@ -7,6 +7,10 @@ export interface Location {
   timezone: string | null;
 }
 
+/** Removes shared locations once no retained click refers to them. */
+export const DELETE_UNUSED_LOCATIONS =
+  "DELETE FROM locations WHERE NOT EXISTS (SELECT 1 FROM clicks WHERE clicks.location_id = locations.id)";
+
 export function text(value: unknown, limit = 128): string | null {
   if (typeof value !== "string") return null;
   const result = value.trim().normalize("NFC");

@@ -1,6 +1,7 @@
 import { createAuth } from "./auth";
 import { type AdminEnv, DAY, json, NOINDEX, RETENTION_DAYS } from "./env";
-import { parseFilters, recent, summary } from "./queries";
+import { normalizeIp } from "./location";
+import { forgetIp, parseFilters, recent, summary } from "./queries";
 import { readBody } from "./validation";
 
 // Every dashboard response, including redirects, auth replies, errors and the
@@ -27,34 +28,16 @@ async function route(request: Request, env: AdminEnv): Promise<Response> {
     if (request.method !== method)
       return json({ error: "Method not allowed" }, 405, { Allow: method });
     if (method === "POST") {
-      let origin: string;
-      try {
-        origin = new URL(env.BETTER_AUTH_URL).origin;
-      } catch {
-        return json({ error: "Authentication temporarily unavailable" }, 503);
-      }
-      if (request.headers.get("Origin") !== origin)
-        return json({ error: "Origin not allowed" }, 403);
-      if (
-        request.headers.get("Content-Type")?.split(";")[0]?.trim() !==
-        "application/json"
-      )
-        return json({ error: "JSON required" }, 415);
-      try {
-        const body = await readBody(request, 8192);
-        if (!body || typeof body !== "object" || Array.isArray(body))
-          return json({ error: "Invalid request" }, 400);
-        request = new Request(request, {
-          body: JSON.stringify({
-            ...body,
-            ...(url.pathname.endsWith("/change-password")
-              ? { revokeOtherSessions: true }
-              : {}),
-          }),
-        });
-      } catch {
-        return json({ error: "Invalid request" }, 400);
-      }
+      const body = await jsonBody(request, env, 8192);
+      if (body instanceof Response) return body;
+      request = new Request(request, {
+        body: JSON.stringify({
+          ...body,
+          ...(url.pathname.endsWith("/change-password")
+            ? { revokeOtherSessions: true }
+            : {}),
+        }),
+      });
     }
     try {
       const response = await createAuth(env).handler(request);
@@ -97,7 +80,11 @@ async function route(request: Request, env: AdminEnv): Promise<Response> {
       return json({ error: "Authentication temporarily unavailable" }, 503);
     }
   }
-  if (!["GET", "HEAD"].includes(request.method))
+  // Forgetting an IP is the only data mutation; everything else is read-only.
+  if (url.pathname === "/api/forget") {
+    if (request.method !== "POST")
+      return json({ error: "Method not allowed" }, 405, { Allow: "POST" });
+  } else if (!["GET", "HEAD"].includes(request.method))
     return json({ error: "Read-only endpoint" }, 405, { Allow: "GET, HEAD" });
   if (!url.pathname.startsWith("/api/")) {
     const asset = await env.ASSETS.fetch(request);
@@ -133,8 +120,18 @@ async function route(request: Request, env: AdminEnv): Promise<Response> {
         apps: apps.results.map((row) => row.app),
         environments: ["production", "staging"],
         retentionDays: RETENTION_DAYS,
-        access: "authenticated-read-only",
+        access: "authenticated",
       });
+    }
+    if (url.pathname === "/api/forget") {
+      const body = await jsonBody(request, env, 1024);
+      if (body instanceof Response) return body;
+      const ip =
+        Object.keys(body).join() === "ip" && typeof body.ip === "string"
+          ? normalizeIp(body.ip)
+          : null;
+      if (!ip) return json({ error: "Invalid IP address" }, 400);
+      return json(await forgetIp(env.DB, ip));
     }
     const filters = parseFilters(url, env.SITES);
     if (!filters)
@@ -160,6 +157,33 @@ async function route(request: Request, env: AdminEnv): Promise<Response> {
       error instanceof Error && error.message === "Invalid cursor" ? 400 : 503,
     );
   }
+}
+
+/** Mutations accept only bounded JSON objects posted from the dashboard origin. */
+async function jsonBody(
+  request: Request,
+  env: AdminEnv,
+  maxBytes: number,
+): Promise<Record<string, unknown> | Response> {
+  let origin: string;
+  try {
+    origin = new URL(env.BETTER_AUTH_URL).origin;
+  } catch {
+    return json({ error: "Authentication temporarily unavailable" }, 503);
+  }
+  if (request.headers.get("Origin") !== origin)
+    return json({ error: "Origin not allowed" }, 403);
+  if (
+    request.headers.get("Content-Type")?.split(";")[0]?.trim() !==
+    "application/json"
+  )
+    return json({ error: "JSON required" }, 415);
+  try {
+    const body = await readBody(request, maxBytes);
+    if (body && typeof body === "object" && !Array.isArray(body))
+      return body as Record<string, unknown>;
+  } catch {}
+  return json({ error: "Invalid request" }, 400);
 }
 
 export default { fetch: admin } satisfies ExportedHandler<AdminEnv>;

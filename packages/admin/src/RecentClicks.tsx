@@ -1,15 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { count, countryName, type Events, getData, time } from "./data";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { ContextMenu, useContextMenu } from "./ContextMenu";
+import {
+  count,
+  countryName,
+  type Events,
+  forgetIp,
+  getData,
+  time,
+} from "./data";
 import type { Link } from "./filters";
 
 export function RecentClicks({
   initial,
   query,
   link,
+  notify,
+  onForgotten,
 }: {
   initial: Events;
   query: string;
   link: Link;
+  notify: (message: string) => void;
+  onForgotten: (result: { ip: string; deleted: number }) => void;
 }) {
   const [data, setData] = useState(initial);
   const [paging, setPaging] = useState(false);
@@ -19,6 +32,8 @@ export function RecentClicks({
   const busy = useRef(false);
   const consumed = useRef(new Set<string>());
   const sentinel = useRef<HTMLDivElement | null>(null);
+  const menu = useContextMenu<string>();
+  const [forgetting, setForgetting] = useState<string | null>(null);
 
   useEffect(() => () => active.current?.abort(), []);
 
@@ -145,7 +160,13 @@ export function RecentClicks({
                   </a>
                 </td>
                 <td className="ip-address">
-                  <a href={link({ ip: event.ip })}>{event.ip ?? "Unknown"}</a>
+                  {event.ip ? (
+                    <a href={link({ ip: event.ip })} {...menu.target(event.ip)}>
+                      {event.ip}
+                    </a>
+                  ) : (
+                    <a href={link({ ip: null })}>Unknown</a>
+                  )}
                 </td>
                 <td className="event-location">
                   {event.location ? (
@@ -231,6 +252,69 @@ export function RecentClicks({
           </button>
         )}
       </div>
+      {menu.opened && (
+        <ContextMenu
+          label={`Actions for ${menu.opened.value}`}
+          title={menu.opened.value}
+          x={menu.opened.x}
+          y={menu.opened.y}
+          onClose={menu.close}
+          items={ipActions(menu.opened.value)}
+        />
+      )}
+      {forgetting && (
+        <ConfirmDialog
+          eyebrow="FORGET IP ADDRESS"
+          title={
+            <>
+              Forget <code>{forgetting}</code>?
+            </>
+          }
+          confirmLabel="Forget IP address"
+          pendingLabel="Forgetting…"
+          onCancel={() => setForgetting(null)}
+          onConfirm={async () => {
+            const result = await forgetIp(forgetting);
+            setForgetting(null);
+            onForgotten(result);
+          }}
+        >
+          <p>
+            Every retained click recorded from this address is permanently
+            deleted, across all sites, apps, environments and dates, not only
+            the clicks shown here. This cannot be undone.
+          </p>
+          <p>Clicks it sends later are recorded as usual.</p>
+        </ConfirmDialog>
+      )}
     </section>
   );
+
+  function ipActions(ip: string) {
+    return [
+      {
+        label: "Show clicks from this IP",
+        icon: "≡",
+        onSelect: () => location.assign(link({ ip })),
+      },
+      {
+        label: "Copy IP address",
+        icon: "⧉",
+        onSelect: () =>
+          // Clipboard access is missing outside secure contexts.
+          void Promise.resolve()
+            .then(() => navigator.clipboard.writeText(ip))
+            .then(
+              () => notify(`Copied ${ip} to the clipboard.`),
+              () => notify("Could not copy to the clipboard."),
+            ),
+      },
+      {
+        label: "Forget this IP…",
+        icon: "⊘",
+        danger: true,
+        onSelect: () => setForgetting(ip),
+      },
+    ];
+  }
 }

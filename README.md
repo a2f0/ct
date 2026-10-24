@@ -1,8 +1,9 @@
 # ct
 
 A small click tracker: an explicitly initialized browser client batches clicks,
-a Cloudflare Worker stores them in D1 (SQLite), and an authenticated read-only dashboard
-shows activity. A shared browser extension disables CT in Chrome and Firefox.
+a Cloudflare Worker stores them in D1 (SQLite), and an authenticated dashboard
+shows activity and can forget the clicks recorded from an IP address. A shared
+browser extension disables CT in Chrome and Firefox.
 
 - API: https://ct.a2f0.net
 - Dashboard: https://ct-admin.a2f0.net

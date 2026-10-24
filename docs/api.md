@@ -34,7 +34,7 @@ other values must match the stored form, and invalid values return 400.
 Ranges are capped at 90 days plus the end-day boundary.
 Events returns 100 rows in descending click-time order and an opaque nextCursor.
 Server receipt times are internal and are not returned. Pass cursor with the same
-filters for the next page. All data endpoints require a valid administrator session and remain read-only. Responses are
+filters for the next page. All data endpoints require a valid administrator session. Responses are
 not cached. The UI displays UTC event dates and no unique-visitor metric.
 Each event includes app (slug or null), environment (production, staging, or null), ip (IPv4/IPv6 or null) and location (null or continent,
 country, region, regionCode, city, timezone). The Worker adds these from Cloudflare
@@ -51,6 +51,16 @@ LEFT JOINs. clicks_location indexes references for retention cleanup. Migrations
 run before either Worker uploads; the old Worker remains compatible with the
 additive schema. The daily retention transaction deletes expired clicks and then
 unreferenced locations, including unused rows created by duplicate retries.
+
+POST /api/forget is the only data mutation. It takes a JSON body of exactly
+{ip}, canonicalized like the ip filter, from a signed-in session with the exact
+dashboard Origin, bounded to 1 KiB. One atomic D1 batch deletes every retained
+click from that address, whatever its site, app, environment or date, and then
+the locations no remaining click references. It returns {ip, deleted} with the
+number of clicks removed; repeating it deletes nothing. Clicks without an IP
+cannot be forgotten this way. Other methods return 405, a foreign or missing
+Origin 403, other media types 415 and invalid addresses 400. It shares the read
+rate limit. Every other data route stays GET/HEAD only.
 
 Pagination is a live view, not a snapshot: delayed arrivals can land in a page
 already read. Refresh to include arrivals that precede the current cursor.
@@ -79,7 +89,15 @@ like the unfiltered list. Drill-down values stay in the query string because
 Cloudflare's asset router re-encodes paths and merges slashes, which would alter
 values such as Biel/Bienne. Changing a shared filter keeps the drill-down; the
 navigation links return to the unscoped views. Migration 0006_ip_filter.sql
-indexes IP addresses in click-time order for IP drill-downs.
+indexes IP addresses in click-time order for IP drill-downs, and for forgetting.
+
+IP addresses in the recent-click table replace the browser's context menu with
+the dashboard's own. It opens from a right-click, Shift+F10 or the context-menu
+key, or a touch long press, and offers the IP drill-down, copying the address
+and Forget this IP. Forgetting asks for confirmation in a modal that names the
+address and focuses Cancel; Escape cancels until the request starts. Failures
+stay in the dialog. Success reloads the current view and reports how many clicks
+were deleted.
 
 Dark Graphite is the default dashboard theme, using a2f0.net's charcoal palette.
 The top-bar switch selects light or dark and persists ct.theme in localStorage;

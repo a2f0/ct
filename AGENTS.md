@@ -20,8 +20,8 @@ with agent-tool versions prepare. Merge does not deploy the Workers. Deploy only
 when requested, using bun run deploy; bun run deploy:preview changes no remote state.
 
 The admin UI and every data API require a provisioned Better Auth session; data
-access remains read-only. Registration is disabled in the auth configuration and
-Worker route allowlist. Accounts are created/reset only through the operator CLI,
+access remains read-only except the confirmed forget-IP deletion in docs/api.md.
+Registration is disabled in the auth configuration and Worker route allowlist. Accounts are created/reset only through the operator CLI,
 which uses bound D1 statements and hidden prompts or stdin, never password args.
 Keep auth tables separate from clicks; an administrator's account/session is not
 a visitor identifier. Never expose data or site metadata before authorization.

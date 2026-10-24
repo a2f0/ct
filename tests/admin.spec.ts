@@ -39,7 +39,7 @@ test("separate routes load only their own report and preserve filters, reloads a
   await expect(
     page.getByRole("heading", { name: "Click activity." }),
   ).toBeVisible();
-  await expect(page.getByText("Private · read only")).toBeVisible();
+  await expect(page.getByText("Private · admins only")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Refresh data" }),
   ).toBeEnabled();

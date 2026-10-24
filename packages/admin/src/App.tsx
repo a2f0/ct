@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type Events, getData, type Summary } from "./data";
+import { count, type Events, getData, type Summary } from "./data";
 import {
   type Drill,
   drillHref,
@@ -46,6 +46,7 @@ export function App() {
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const active = useRef<AbortController | null>(null);
   const filters = { site, app, environment, days };
   // Navigation keeps the shared filters; only this page's URL keeps its scope.
@@ -171,7 +172,7 @@ export function App() {
           </a>
         </nav>
         <div className="sidebar-bottom">
-          <span className="status-dot" /> Private · read only
+          <span className="status-dot" /> Private · admins only
           <p>
             Authenticated access. No visitor profiles.
             <br />
@@ -288,6 +289,14 @@ export function App() {
             </button>
           </div>
         )}
+        {notice && (
+          <div className="notice" role="status">
+            {notice}{" "}
+            <button type="button" onClick={() => setNotice("")}>
+              Dismiss
+            </button>
+          </div>
+        )}
         {view === "overview" ? (
           <Overview
             summary={data?.view === "overview" ? data.summary : null}
@@ -302,6 +311,13 @@ export function App() {
             initial={data.events}
             query={data.query}
             link={link}
+            notify={setNotice}
+            onForgotten={({ ip, deleted }) => {
+              setNotice(
+                `Forgot ${ip}: ${count(deleted)} ${deleted === 1 ? "click" : "clicks"} deleted.`,
+              );
+              void refresh();
+            }}
           />
         ) : (
           <div className="card placeholder" role="status">
