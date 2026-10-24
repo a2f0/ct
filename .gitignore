@@ -12,6 +12,7 @@ test-results
 *.tgz
 *.zip
 wrangler.generated.json
+.DS_Store
 # Private artifact-bound readiness reports (docs/readiness.md)
 .readiness/
 # Favicons rendered from assets/brand/logo.svg by the admin dev and build scripts.
