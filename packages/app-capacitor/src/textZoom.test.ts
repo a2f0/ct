@@ -3,7 +3,7 @@ import { followTextSize } from "./textZoom";
 
 async function start(platform: string, preferred: () => Promise<number>) {
   const calls: string[] = [];
-  let resume: (() => void) | undefined;
+  let stateChange: ((state: { isActive: boolean }) => void) | undefined;
   followTextSize(
     {
       getPreferred: async () => ({ value: await preferred() }),
@@ -14,29 +14,33 @@ async function start(platform: string, preferred: () => Promise<number>) {
     {
       addListener: async (eventName, listener) => {
         calls.push(`listen:${eventName}`);
-        resume = listener;
+        stateChange = listener;
       },
     },
     platform,
   );
   await Bun.sleep(0);
-  return { calls, resume: () => resume?.() };
+  return {
+    calls,
+    activate: (isActive: boolean) => stateChange?.({ isActive }),
+  };
 }
 
-test("iOS scales text to Dynamic Type now and on every resume", async () => {
+test("iOS scales text to Dynamic Type now and whenever the app becomes active", async () => {
   let size = 1.5;
-  const { calls, resume } = await start("ios", async () => size);
+  const { calls, activate } = await start("ios", async () => size);
   size = 2;
-  resume();
+  activate(false);
+  activate(true);
   await Bun.sleep(0);
-  expect(calls).toEqual(["listen:resume", "set:1.5", "set:2"]);
+  expect(calls).toEqual(["listen:appStateChange", "set:1.5", "set:2"]);
 });
 
 test("a failed lookup leaves the default text size", async () => {
   const { calls } = await start("ios", async () => {
     throw new Error("unavailable");
   });
-  expect(calls).toEqual(["listen:resume"]);
+  expect(calls).toEqual(["listen:appStateChange"]);
 });
 
 test("Android and the browser keep their own text sizing", async () => {

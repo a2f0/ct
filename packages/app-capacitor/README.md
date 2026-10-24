@@ -24,8 +24,8 @@ bars, which then show the black window background with light icons. Android's
 Back steps back through page history and backgrounds the app at the start of
 it (`src/backButton.ts`). Text follows the system text size: Android WebViews
 scale it themselves, and on iOS `src/textZoom.ts` applies the Dynamic Type
-setting through `@capacitor/text-zoom` on each page load and when the app
-returns to the foreground. The browser extension downloads are not shown.
+setting through `@capacitor/text-zoom` on each page load and whenever the app
+becomes active again, including after Control Center's text size control. The browser extension downloads are not shown.
 
 ## Set up
 
