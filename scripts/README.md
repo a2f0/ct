@@ -8,7 +8,7 @@ inside their workspaces.
 | --- | --- | --- |
 | `admin/` | Account provisioning and its D1 adapter | `bun run admin:user -- <arguments>` |
 | `deploy/` | Worker deployment, site registry validation, live release readiness | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
-| `testing/` | Browser fixture preparation and packed SDK smoke tests | `bun run test:browser`, `bun run package:smoke` |
+| `testing/` | Browser fixture preparation, packed SDK smoke tests, native app runs | `bun run test:browser`, `bun run package:smoke`, `bun run test:native` |
 | `git/hooks/` | Commit-message and pre-push gates | `bun run hooks:install` |
 
 After pulling hook-source changes, reinstall the hooks. The shared installer

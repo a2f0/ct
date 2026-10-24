@@ -18,6 +18,7 @@
     "format": "biome check --write .",
     "test": "bun test packages scripts",
     "test:browser": "playwright test",
+    "test:native": "bun scripts/testing/nativeE2e.ts",
     "dev": "turbo run dev",
     "hooks:install": "agent-tool hooks install --apply",
     "deploy": "bun scripts/deploy/deploy.ts",

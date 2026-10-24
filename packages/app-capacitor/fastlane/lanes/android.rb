@@ -44,15 +44,13 @@ def connected_android_device_serials
   [serials, adb_output]
 end
 
+# A chosen device that is not connected fails rather than installing on another.
 def requested_android_device_serial(serials)
   requested_serial = ENV.fetch('ANDROID_SERIAL', '').strip
   return nil if requested_serial.empty?
   return requested_serial if serials.include?(requested_serial)
 
-  UI.important(
-    "ANDROID_SERIAL=#{requested_serial} is not connected; falling back to auto-detected device."
-  )
-  nil
+  UI.user_error!("ANDROID_SERIAL=#{requested_serial} is not connected.")
 end
 
 def preferred_android_device_serial(serials)

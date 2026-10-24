@@ -13,6 +13,7 @@
     "android:sideload": "NATIVE_RELEASE_TIER=production bundle exec fastlane android sideload",
     "android:upload-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane android upload_release",
     "build": "tsc --noEmit && vite build",
+    "build:e2e": "tsc --noEmit && vite build --mode e2e",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
     "cap:prepare": "agent-tool --repo ../.. images build native && bun scripts/prepareMobile.ts",

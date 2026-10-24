@@ -28,12 +28,15 @@ export async function rememberPassword(
   }
 }
 
-export function returnTo(): string {
-  const value = new URLSearchParams(location.search).get("returnTo") ?? "/";
+export function returnTo(search = location.search): string {
+  const value = new URLSearchParams(search).get("returnTo") ?? "/";
   try {
-    const url = new URL(value, location.origin);
+    // A placeholder origin keeps only same-origin paths. The app shell's
+    // capacitor:// URLs have an opaque origin, so location.origin cannot.
+    const base = "https://ct.invalid";
+    const url = new URL(value, base);
     if (
-      url.origin === location.origin &&
+      url.origin === base &&
       ["/", "/recent", "/account"].includes(url.pathname)
     )
       return url.pathname + url.search;

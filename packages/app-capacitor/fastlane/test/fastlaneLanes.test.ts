@@ -420,3 +420,22 @@ puts JSON.generate(
     ],
   });
 });
+
+test("sideload lanes install only on the chosen or a detected device", async () => {
+  const result = await runLanes(`
+serials = %w[R5CT1 emulator-5554]
+fastfile.define_singleton_method(:connected_android_device_serials) { [serials, "List of devices"] }
+resolve = lambda do |serial|
+  serial ? ENV["ANDROID_SERIAL"] = serial : ENV.delete("ANDROID_SERIAL")
+  fastfile.send(:resolve_android_device_serial)
+rescue FastlaneCore::Interface::FastlaneError => e
+  "error: #{e.message}"
+end
+puts JSON.generate([resolve.call(nil), resolve.call("R5CT1"), resolve.call("emulator-5556")])
+`);
+  expect(result).toEqual([
+    "emulator-5554",
+    "R5CT1",
+    "error: ANDROID_SERIAL=emulator-5556 is not connected.",
+  ]);
+});
