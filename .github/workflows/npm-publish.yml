@@ -24,11 +24,19 @@ jobs:
         with:
           version: 2026.10.17
           install_args: bun node
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+        with:
+          ruby-version: "4.0.7"
+          bundler-cache: true
+          working-directory: packages/app-capacitor
       - run: bun install --frozen-lockfile
       - id: version
         run: bun run release:plan --github-output
       - if: steps.version.outputs.publish == 'true'
         run: bun run verify
+        env:
+          FASTLANE_OPT_OUT_USAGE: "1"
+          FASTLANE_SKIP_UPDATE_CHECK: "1"
       - if: steps.version.outputs.publish == 'true'
         name: Wait for deployed collector and private admin
         timeout-minutes: 12

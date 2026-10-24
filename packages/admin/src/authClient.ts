@@ -1,6 +1,9 @@
 import { createAuthClient } from "better-auth/react";
+import { nativeDashboard, requestInit } from "./host";
+
 export const authClient = createAuthClient({
-  fetchOptions: { credentials: "same-origin" },
+  ...(nativeDashboard ? { baseURL: nativeDashboard } : {}),
+  fetchOptions: requestInit(),
 });
 
 type PasswordCredentialConstructor = new (data: {

@@ -192,6 +192,17 @@ supported. If admin status codes change in future, update the private-access
 readiness checks in the same rollout. Only after both deployment and the registry tarball are verified may
 consumers adopt the new release.
 
+## Native app
+
+packages/app-capacitor ships the dashboard as the CT app for iOS and Android
+(net.a2f0.ct, production only). Its [README](../packages/app-capacitor/README.md)
+owns setup, Fastlane lanes, store secrets, and build numbers. Builds call
+https://ct-admin.a2f0.net and sign in through the admin Worker's native-origin
+handling described in the [API guide](api.md), so deploy a Worker change the app
+depends on before uploading the build that needs it. Store uploads are manual
+and run only when requested; neither a merge nor a Worker deployment publishes
+an app.
+
 ## Browser packages
 
 Build outputs are packages/extension/dist/ct-chrome.zip and ct-firefox.zip.
@@ -201,7 +212,10 @@ different startup timing windows; test both when changing the preference protoco
 
 ## Dependency maintenance
 
-Keep Bun, packageManager, CI, exact dependency pins and the lockfile aligned. Use
+Keep Bun, packageManager, CI, exact dependency pins and the lockfile aligned.
+Ruby is pinned in .ruby-version and .mise.toml for the app's Fastlane bundle;
+after changing Capacitor packages, commit the refreshed Swift Package.resolved,
+and expect CI to fail if `bun run mobile:sync` changes a tracked native file. Use
 the installed update-dependencies skill for upgrades. Validate Worker dry-runs,
 the package tarball and both browser suites. Update agent-tool skills only with
 agents:sync; do not edit managed files. Image generation uses agent-tool's declared

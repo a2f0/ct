@@ -17,14 +17,17 @@ browser extension disables CT in Chrome and Firefox.
 | packages/api | Ingestion and admin Workers, indexed D1 schema, retention |
 | packages/admin | React/Vite dashboard |
 | packages/extension | One extension source, Chrome and Firefox builds |
+| packages/app-capacitor | CT app for iOS and Android: the dashboard in a Capacitor shell |
 
 ## Development
 
-Use Bun 1.4.3 and Node 24.22.1 (pinned in .mise.toml). Bun manages workspaces;
-Wrangler development and browser tooling run on Node.
+Use Bun 1.4.3, Node 24.22.1 and Ruby 4.0.7 (pinned in .mise.toml). Bun manages
+workspaces; Wrangler development and browser tooling run on Node; Ruby runs the
+mobile app's Fastlane lanes, their tests and RuboCop.
 
 ```sh
 bun install --frozen-lockfile
+(cd packages/app-capacitor && bundle install)
 bun run hooks:install
 bun run --cwd packages/api db:migrate:local
 bun run dev
@@ -81,6 +84,13 @@ Imports and construction do nothing by themselves. init also refuses webdriver
 browsers; synthetic clicks are ignored. See the [client API](packages/client/README.md)
 for batching, opt-out, and lifecycle behavior. The [extension guide](packages/extension/README.md)
 covers installation in each browser/profile.
+
+## Mobile app
+
+The dashboard also ships as the CT app for iOS and Android (net.a2f0.ct). Run
+`bun run mobile:ios` or `bun run mobile:android` to sync it and open Xcode or
+Android Studio. The [app guide](packages/app-capacitor/README.md) covers the
+native shell and its Fastlane releases.
 
 ## Checks and deployment
 

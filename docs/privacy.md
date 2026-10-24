@@ -89,6 +89,13 @@ These administrative records
 are not joined to click records and are unrelated to visitor attribution. No
 self-service registration or email recovery service is enabled.
 
+The CT app for iOS and Android is the same dashboard in a native shell, with the
+same accounts and session; the platform's HTTP cookie store holds its session
+cookie, and Android app backups are disabled. It records no clicks, loads no
+analytics or crash-reporting SDK, and keeps its theme preference in the
+WebView's local storage. Its iOS privacy manifest declares only the
+administrator email address, linked to the account for app functionality.
+
 
 App attribution comes only from the explicit tracker app option or the nearest
 valid data-ct-app boundary, never from DOM text, IDs, class names, or iframe URLs.

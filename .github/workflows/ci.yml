@@ -14,6 +14,11 @@ jobs:
         with:
           version: 2026.10.17
           install_args: bun node
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+        with:
+          ruby-version: "4.0.7"
+          bundler-cache: true
+          working-directory: packages/app-capacitor
       - run: bun install --frozen-lockfile
       - name: Validate the actual branch name
         env:
@@ -21,7 +26,18 @@ jobs:
         run: bun run lint:branch-name "$BRANCH_NAME"
       - run: bun run check
       - run: bun run test
+        env:
+          FASTLANE_OPT_OUT_USAGE: "1"
+          FASTLANE_SKIP_UPDATE_CHECK: "1"
       - run: bun run build
+      - name: Sync the native projects without changing them
+        run: |
+          bun run mobile:sync
+          native_paths=(packages/app-capacitor/ios packages/app-capacitor/android)
+          test -z "$(git status --porcelain -- "${native_paths[@]}")" || {
+            git status --short -- "${native_paths[@]}"
+            exit 1
+          }
       - run: bun run package:smoke
       - run: bun run test:extension
       - run: bunx --no-install playwright install --with-deps chromium firefox

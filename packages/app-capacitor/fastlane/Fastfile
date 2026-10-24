@@ -1,0 +1,8 @@
+# frozen_string_literal: true
+
+default_platform(:ios)
+skip_docs
+
+import 'lanes/store.rb'
+import 'lanes/android.rb'
+import 'lanes/ios.rb'

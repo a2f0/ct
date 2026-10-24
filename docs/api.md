@@ -62,6 +62,18 @@ cannot be forgotten this way. Other methods return 405, a foreign or missing
 Origin 403, other media types 415 and invalid addresses 400. It shares the read
 rate limit. Every other data route stays GET/HEAD only.
 
+The [CT app](../packages/app-capacitor/README.md) bundles the dashboard on its
+WebView origin, capacitor://localhost on iOS or https://localhost on Android,
+and sends these requests through Capacitor's native HTTP stack, which carries
+the session cookie but no Origin header. Its requests name that WebView origin
+in X-CT-Native-Origin. When a request has no Origin and the marker names one of
+those two origins, the admin Worker checks it as if it came from the dashboard
+origin, for the auth routes and POST /api/forget alike. A request with any
+Origin, even a foreign or null one, is checked as sent, and other marker values
+are ignored. The marker is not authentication: every data route still requires
+a session, and browsers cannot send it cross-origin because the Worker answers
+no CORS preflight.
+
 Pagination is a live view, not a snapshot: delayed arrivals can land in a page
 already read. Refresh to include arrivals that precede the current cursor.
 

@@ -9,6 +9,7 @@ import {
   scopeHeading,
   UNKNOWN,
 } from "./filters";
+import { nativeDashboard } from "./host";
 import { Overview } from "./Overview";
 import { RecentClicks } from "./RecentClicks";
 import { SignOut } from "./SignOut";
@@ -328,10 +329,13 @@ export function App() {
           <span>
             ct. <span className="muted">Keep it simple. Make it count.</span>
           </span>
-          <span className="downloads">
-            Browser opt-out: <a href="/downloads/ct-chrome.zip">Chrome ZIP</a> ·{" "}
-            <a href="/downloads/ct-firefox.zip">Firefox ZIP</a>
-          </span>
+          {/* The app shell bundles no desktop browser extensions. */}
+          {!nativeDashboard && (
+            <span className="downloads">
+              Browser opt-out: <a href="/downloads/ct-chrome.zip">Chrome ZIP</a>{" "}
+              · <a href="/downloads/ct-firefox.zip">Firefox ZIP</a>
+            </span>
+          )}
         </footer>
       </main>
     </div>

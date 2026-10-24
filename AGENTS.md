@@ -2,10 +2,12 @@
 
 Read README.md, scripts/README.md, and docs/operations.md. All workspaces live in packages/: client
 is the publishable browser SDK, api owns the two Workers and D1 schema, admin
-is the React UI, and extension produces Chrome and Firefox packages.
+is the React UI, app-capacitor ships it as the iOS and Android app, and
+extension produces Chrome and Firefox packages.
 
-Use the Bun and Node versions in .mise.toml, placed first on PATH in agent shells. Do not
-run mise trust. Install with bun install --frozen-lockfile and bun run hooks:install.
+Use the Bun, Node and Ruby versions in .mise.toml, placed first on PATH in agent shells. Do not
+run mise trust. Install with bun install --frozen-lockfile, bundle install in
+packages/app-capacitor, and bun run hooks:install.
 Resolve GitHub identity with gh repo view --json nameWithOwner. Work on feature
 branches in <type>/<topic> form, create them with agent-tool branch create,
 sign Conventional Commits, preserve unrelated work, and never force-push or add
@@ -16,8 +18,9 @@ and bun run test:browser. CI's verify job gates merges, including skill drift.
 Capture noisy commands with bun run agent:run --label <check> -- <command> and
 inspect relevant warnings and artifacts. Keep independent review verdicts visible.
 Use the installed ship-pr skill; prepare client versions against the fetched base
-with agent-tool versions prepare. Merge does not deploy the Workers. Deploy only
+with agent-tool versions prepare. Merge does not deploy the Workers or publish the apps. Deploy only
 when requested, using bun run deploy; bun run deploy:preview changes no remote state.
+Upload store builds only when requested, through the app-capacitor README's lanes.
 
 The admin UI and every data API require a provisioned Better Auth session; data
 access remains read-only except the confirmed forget-IP deletion in docs/api.md.

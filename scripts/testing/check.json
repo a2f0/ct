@@ -17,6 +17,10 @@
       "command": ["bun", "run", "typecheck"]
     },
     {
+      "label": "rubocop",
+      "command": ["bun", "run", "lint:rubocop"]
+    },
+    {
       "label": "skills",
       "command": ["bun", "run", "agents:check"]
     }

@@ -27,7 +27,15 @@
     "admin:user": "node scripts/admin/adminUser.ts",
     "verify": "agent-tool run-group scripts/testing/verify.json",
     "lint:branch-name": "agent-tool branch check",
-    "release:plan": "agent-tool release plan packages/client/package.json"
+    "release:plan": "agent-tool release plan packages/client/package.json",
+    "lint:rubocop": "bun run --cwd packages/app-capacitor lint:rubocop",
+    "mobile:sync": "bun run --cwd packages/app-capacitor build && bun run --cwd packages/app-capacitor cap:sync",
+    "mobile:ios": "bun run mobile:sync && bun run --cwd packages/app-capacitor cap:open:ios",
+    "mobile:android": "bun run mobile:sync && bun run --cwd packages/app-capacitor cap:open:android",
+    "mobile:build:ios": "bun run --cwd packages/app-capacitor ios:build-release",
+    "mobile:upload:ios": "bun run --cwd packages/app-capacitor ios:upload-release",
+    "mobile:build:android": "bun run --cwd packages/app-capacitor android:build-release",
+    "mobile:upload:android": "bun run --cwd packages/app-capacitor android:upload-release"
   },
   "devDependencies": {
     "@a2f0/agent-tool": "0.1.19",
