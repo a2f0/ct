@@ -12,6 +12,7 @@ test-results
 *.tgz
 *.zip
 wrangler.generated.json
+.DS_Store
 # Favicons rendered from assets/brand/logo.svg by the admin dev and build scripts.
 packages/admin/public/favicon.svg
 packages/admin/public/favicon.ico
