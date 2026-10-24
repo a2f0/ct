@@ -108,3 +108,5 @@ full logs. [Repository scripts](scripts/README.md) describes the internal toolin
 layout. [Operations](docs/operations.md) covers deployment, npm publication, and
 account provisioning. The [API guide](docs/api.md) describes endpoint behavior and
 dashboard dimensions; [Privacy](docs/privacy.md) defines data and delivery limits.
+[Release readiness](docs/readiness.md) covers store candidate audits and the
+readiness lanes.

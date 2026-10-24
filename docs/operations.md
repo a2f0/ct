@@ -201,7 +201,8 @@ https://ct-admin.a2f0.net and sign in through the admin Worker's native-origin
 handling described in the [API guide](api.md), so deploy a Worker change the app
 depends on before uploading the build that needs it. Store uploads are manual
 and run only when requested; neither a merge nor a Worker deployment publishes
-an app.
+an app. Audit a store candidate with the [readiness lanes and skill](readiness.md)
+and record the result in its PR.
 
 ## Browser packages
 

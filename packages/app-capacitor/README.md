@@ -85,6 +85,7 @@ and run with `bun run test`; `bun run check` runs RuboCop.
 | `ios fetch_profiles` | Installs the match App Store profile read-only | |
 | `android build_release` | Signed release App Bundle, without uploading | `build_number:` |
 | `android upload_release` | `build_release`, then uploads to a Google Play track | `build_number:`, `track:` (`internal`), `release_status:` (`completed`), `validate_only:` |
+| `ios readiness`, `android readiness` | Inspects a candidate and its store state, read-only | See [readiness lanes](../../docs/readiness.md) |
 | `store_build_numbers` | Prints the latest build numbers in both stores | `track:` |
 | `android build_debug_apk`, `android build_release_apk` | Builds an APK for sideloading | |
 | `android install_debug`, `android install_release`, `android sideload` | Builds and installs an APK on a connected device | `build_type:release` (`sideload`) |
@@ -143,7 +144,9 @@ version.
 
 `ios build_release` runs a release sync, verifies the generated native config is
 fully bundled, installs the App Store certificate and profile with read-only
-`match` into a temporary keychain, and builds `ios/App/output/CT.ipa`. Signing
+`match` into a temporary keychain, and builds `ios/App/output/CT.ipa` with a
+source/hash receipt (`CT.ipa.build.json`) for the
+[readiness lanes](../../docs/readiness.md). Signing
 requires a Developer Team ID via `IOS_TEAM_ID`, `APPLE_TEAM_ID`,
 `DEVELOPMENT_TEAM`, `FASTLANE_TEAM_ID`, `TEAM_ID`, or `team_id:<id>`. Run
 `bun run ios:profiles` once to create the `match AppStore net.a2f0.ct` profile
@@ -160,7 +163,8 @@ review unless `skip_waiting_for_build_processing:true` or
 
 `android build_release` requires the upload key and its passwords, runs a
 release sync, and builds
-`android/app/build/outputs/bundle/release/app-release.aab`.
+`android/app/build/outputs/bundle/release/app-release.aab` with a source/hash
+receipt (`app-release.aab.build.json`).
 `android upload_release` uploads it with the service account, skipping Play
 metadata, changelogs, images, and screenshots. Play accepts API uploads only
 after the app's first bundle has been uploaded in the Play Console. Validate

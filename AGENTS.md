@@ -21,6 +21,8 @@ Use the installed ship-pr skill; prepare client versions against the fetched bas
 with agent-tool versions prepare. Merge does not deploy the Workers or publish the apps. Deploy only
 when requested, using bun run deploy; bun run deploy:preview changes no remote state.
 Upload store builds only when requested, through the app-capacitor README's lanes.
+Before a store submission, audit the candidate with skills/app-store-readiness
+and the readiness lanes in docs/readiness.md, and record its findings in the PR.
 
 The admin UI and every data API require a provisioned Better Auth session; data
 access remains read-only except the confirmed forget-IP deletion in docs/api.md.
@@ -42,7 +44,9 @@ OAuth session is sufficient for local deployment. Never copy another project's k
 
 Managed skills in .agents/skills and .claude/skills come from the exact agent-tool
 pin. Do not edit them; run bun run agents:sync after changing the pin and commit
-the lockfile, skills and .agent-tool-skills.json together. Brand sources live in
+the lockfile, skills and .agent-tool-skills.json together. skills/ holds the
+repository-owned app-store-readiness skill, kept byte-identical with balebase and
+nc as docs/readiness.md describes. Brand sources live in
 assets/brand and image outputs are declared in agent-tool.json.
 
 Keep repository-owned scripts grouped by purpose under scripts/ and retain the
