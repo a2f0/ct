@@ -20,8 +20,9 @@ appId: net.a2f0.ct
     visible: "Every recorded interaction"
     timeout: 30000
 - tapOn: ".*Recent clicks"
-- extendedWaitUntil:
-    visible: "2 clicks loaded.*"
+# The status follows the table, below the fold on the smallest iPhone.
+- scrollUntilVisible:
+    element: "2 clicks loaded.*"
     timeout: 15000
 - pressKey: home
 - waitForAnimationToEnd
