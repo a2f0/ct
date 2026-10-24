@@ -165,12 +165,13 @@ export function ContextMenu({
       ...event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]"),
     ];
     const index = options.indexOf(document.activeElement as HTMLElement);
-    const next = {
+    const moves: Record<string, HTMLElement | undefined> = {
       ArrowDown: options[(index + 1) % options.length],
       ArrowUp: options[(index - 1 + options.length) % options.length],
       Home: options[0],
       End: options.at(-1),
-    }[event.key];
+    };
+    const next = moves[event.key];
     if (!next) return;
     event.preventDefault();
     next.focus();
