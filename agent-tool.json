@@ -92,6 +92,86 @@
             ]
           }
         ]
+      },
+      "native": {
+        "dir": "packages/app-capacitor",
+        "outputs": [
+          {
+            "path": "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png",
+            "size": 1024,
+            "opaque": true,
+            "layers": [
+              {
+                "fill": "#102723"
+              },
+              {
+                "source": "logo",
+                "scale": 0.8
+              }
+            ]
+          },
+          {
+            "path": "ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732{variant}.png",
+            "size": 2732,
+            "variants": {
+              "": 1,
+              "-1": 1,
+              "-2": 1
+            },
+            "opaque": true,
+            "layers": [
+              {
+                "fill": "#102723"
+              },
+              {
+                "source": "logo",
+                "scale": 0.2
+              }
+            ]
+          },
+          {
+            "path": "android/app/src/main/res/values/ic_launcher_background.xml",
+            "colors": {
+              "ic_launcher_background": "#102723"
+            }
+          },
+          {
+            "path": "android/app/src/main/res/mipmap-{variant}/ic_launcher.png",
+            "size": 48,
+            "variants": "android",
+            "layers": [
+              {
+                "source": "logo"
+              }
+            ]
+          },
+          {
+            "path": "android/app/src/main/res/mipmap-{variant}/ic_launcher_round.png",
+            "size": 48,
+            "variants": "android",
+            "mask": "circle",
+            "layers": [
+              {
+                "fill": "#102723"
+              },
+              {
+                "source": "logo",
+                "scale": 0.8
+              }
+            ]
+          },
+          {
+            "path": "android/app/src/main/res/mipmap-{variant}/ic_launcher_foreground.png",
+            "size": 108,
+            "variants": "android",
+            "layers": [
+              {
+                "source": "logo",
+                "scale": 0.6
+              }
+            ]
+          }
+        ]
       }
     }
   },

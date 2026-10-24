@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
+  "exports": {
+    "./main": "./src/main.tsx"
+  },
   "scripts": {
     "build": "agent-tool --repo ../.. images build favicons && vite build && bun build.ts",
     "check": "tsc --noEmit",

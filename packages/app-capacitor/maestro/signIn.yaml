@@ -1,0 +1,45 @@
+# Drives the real app against the isolated browser-test admin Worker through
+# native HTTP: sign in, read data, keep the session across page loads and an
+# app relaunch, switch theme, and sign out. Run with `bun run test:native`.
+# Each relaunch leaves the app first, as a person switching away does: iOS
+# writes its cookie store then, so a hard kill right after signing in can lose
+# the session.
+appId: net.a2f0.ct
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Access your click activity."
+    timeout: 30000
+- tapOn: "Email"
+- inputText: "browser@example.test"
+- tapOn: "Password"
+- inputText: "isolated-browser-password-0001"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Every recorded interaction"
+    timeout: 30000
+- tapOn: ".*Recent clicks"
+- extendedWaitUntil:
+    visible: "2 clicks loaded.*"
+    timeout: 15000
+- pressKey: home
+- waitForAnimationToEnd
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Every recorded interaction"
+    timeout: 30000
+- tapOn: ".*Light mode"
+- assertVisible: ".*Dark mode"
+- tapOn: "Sign out"
+- extendedWaitUntil:
+    visible: "Access your click activity."
+    timeout: 15000
+- pressKey: home
+- waitForAnimationToEnd
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Access your click activity."
+    timeout: 30000

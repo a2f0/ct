@@ -1,0 +1,43 @@
+{
+  "name": "@ct/app-capacitor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "android:build-debug-apk": "NATIVE_RELEASE_TIER=production bundle exec fastlane android build_debug_apk",
+    "android:build-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane android build_release",
+    "android:build-release-apk": "NATIVE_RELEASE_TIER=production bundle exec fastlane android build_release_apk",
+    "android:install-debug": "NATIVE_RELEASE_TIER=production bundle exec fastlane android install_debug",
+    "android:install-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane android install_release",
+    "android:sideload": "NATIVE_RELEASE_TIER=production bundle exec fastlane android sideload",
+    "android:upload-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane android upload_release",
+    "build": "tsc --noEmit && vite build",
+    "build:e2e": "tsc --noEmit && vite build --mode e2e",
+    "cap:open:android": "cap open android",
+    "cap:open:ios": "cap open ios",
+    "cap:prepare": "agent-tool --repo ../.. images build native && bun scripts/prepareMobile.ts",
+    "cap:run:android": "cap run android",
+    "cap:run:ios": "cap run ios",
+    "cap:sync": "bun run cap:prepare && cap sync",
+    "check": "tsc --noEmit",
+    "ios:build-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios build_release",
+    "ios:fetch-profiles": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios fetch_profiles",
+    "ios:profiles": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios profiles",
+    "ios:upload-release": "NATIVE_RELEASE_TIER=production bundle exec fastlane ios upload_release",
+    "lint:rubocop": "bundle exec rubocop",
+    "store:build-numbers": "NATIVE_RELEASE_TIER=production bundle exec fastlane store_build_numbers"
+  },
+  "dependencies": {
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@ct/admin": "workspace:*"
+  },
+  "devDependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/cli": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@vitejs/plugin-react": "6.1.2",
+    "vite": "8.3.4"
+  }
+}

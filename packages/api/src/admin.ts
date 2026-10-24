@@ -15,7 +15,37 @@ export async function admin(
   return response;
 }
 
+// WebView origins of the native app shell (packages/app-capacitor) on iOS and Android.
+const NATIVE_ORIGINS = ["capacitor://localhost", "https://localhost"];
+
+/**
+ * The app shell sends requests through the platform's HTTP stack, which keeps
+ * its session cookie but omits the Origin a WebView fetch would carry. Its
+ * marker header stands in for the dashboard origin only when no Origin is
+ * present. It is not authentication: cookies still authorize every request,
+ * and browsers always send Origin on cross-origin requests, which this Worker
+ * never allows through CORS. Non-browser clients could already send the
+ * dashboard Origin directly.
+ */
+function withNativeOrigin(request: Request, env: AdminEnv): Request {
+  if (
+    request.headers.has("Origin") ||
+    !NATIVE_ORIGINS.includes(request.headers.get("X-CT-Native-Origin") ?? "")
+  )
+    return request;
+  let origin: string;
+  try {
+    origin = new URL(env.BETTER_AUTH_URL).origin;
+  } catch {
+    return request; // Mutations fail closed on the invalid configuration.
+  }
+  const headers = new Headers(request.headers);
+  headers.set("Origin", origin);
+  return new Request(request, { headers });
+}
+
 async function route(request: Request, env: AdminEnv): Promise<Response> {
+  request = withNativeOrigin(request, env);
   const url = new URL(request.url);
   if (url.pathname.startsWith("/api/auth/")) {
     const method = new Map([

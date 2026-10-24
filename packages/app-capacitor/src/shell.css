@@ -1,0 +1,35 @@
+/*
+ * The shell draws under the system bars (viewport-fit=cover) and pads the page
+ * with their insets, so the dashboard's paper shows behind them in either
+ * theme. Capacitor writes Android's insets to --safe-area-inset-*, as zero on
+ * WebViews that keep the page clear of the bars; iOS reports env() instead.
+ */
+:root {
+  --shell-inset-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --shell-inset-right: var(
+    --safe-area-inset-right,
+    env(safe-area-inset-right, 0px)
+  );
+  --shell-inset-bottom: var(
+    --safe-area-inset-bottom,
+    env(safe-area-inset-bottom, 0px)
+  );
+  --shell-inset-left: var(
+    --safe-area-inset-left,
+    env(safe-area-inset-left, 0px)
+  );
+}
+body {
+  padding: var(--shell-inset-top) var(--shell-inset-right)
+    var(--shell-inset-bottom) var(--shell-inset-left);
+}
+.shell {
+  min-height: calc(100vh - var(--shell-inset-top) - var(--shell-inset-bottom));
+}
+/* Above the narrow layout, the dashboard's sidebar sticks to the viewport. */
+@media (min-width: 721px) {
+  .sidebar {
+    top: var(--shell-inset-top);
+    height: calc(100vh - var(--shell-inset-top) - var(--shell-inset-bottom));
+  }
+}

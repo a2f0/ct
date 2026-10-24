@@ -8,7 +8,7 @@ inside their workspaces.
 | --- | --- | --- |
 | `admin/` | Account provisioning and its D1 adapter | `bun run admin:user -- <arguments>` |
 | `deploy/` | Worker deployment, site registry validation, live release readiness | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
-| `testing/` | Browser fixture preparation and packed SDK smoke tests | `bun run test:browser`, `bun run package:smoke` |
+| `testing/` | Browser fixture preparation, packed SDK smoke tests, native app runs | `bun run test:browser`, `bun run package:smoke`, `bun run test:native` |
 | `git/hooks/` | Commit-message and pre-push gates | `bun run hooks:install` |
 
 After pulling hook-source changes, reinstall the hooks. The shared installer
@@ -19,7 +19,7 @@ setting with `git config --local --unset core.hooksPath`, then run
 `bun run hooks:install`. Inspect other custom hook paths before changing them;
 use `--adopt` only after reviewing unmanaged hook replacements.
 
-`bun run check` records lint, typechecking, and managed skills. `bun run verify`
+`bun run check` records lint, typechecking, RuboCop, and managed skills. `bun run verify`
 adds unit tests, builds, and packed SDK smoke tests; the pre-push hook also checks
 actual destination branches and signed, unattributed commits. Browser and
 extension validation remain separate documented CI steps. Registry decisions

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CT</string>
+    <string name="title_activity_main">CT</string>
+    <string name="package_name">net.a2f0.ct</string>
+    <string name="custom_url_scheme">net.a2f0.ct</string>
+</resources>

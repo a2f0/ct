@@ -1,3 +1,5 @@
+import { apiUrl, requestInit } from "./host";
+
 export interface Summary {
   totals: { clicks: number; sites: number; pages: number };
   daily: { day: string; clicks: number }[];
@@ -51,10 +53,10 @@ export async function getData<T>(
   path: string,
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch(path, {
-    signal: signal ?? null,
-    credentials: "same-origin",
-  });
+  const response = await fetch(
+    apiUrl(path),
+    requestInit({ signal: signal ?? null }),
+  );
   if (response.status === 401)
     window.dispatchEvent(new Event("ct:session-expired"));
   if (!response.ok)
@@ -70,12 +72,14 @@ export async function getData<T>(
 export async function forgetIp(
   ip: string,
 ): Promise<{ ip: string; deleted: number }> {
-  const response = await fetch("/api/forget", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ip }),
-  });
+  const response = await fetch(
+    apiUrl("/api/forget"),
+    requestInit({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ip }),
+    }),
+  );
   if (response.status === 401)
     window.dispatchEvent(new Event("ct:session-expired"));
   if (!response.ok)
