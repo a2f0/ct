@@ -66,6 +66,27 @@ export async function getData<T>(
   return response.json() as Promise<T>;
 }
 
+/** Permanently deletes every retained click recorded from one IP address. */
+export async function forgetIp(
+  ip: string,
+): Promise<{ ip: string; deleted: number }> {
+  const response = await fetch("/api/forget", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ip }),
+  });
+  if (response.status === 401)
+    window.dispatchEvent(new Event("ct:session-expired"));
+  if (!response.ok)
+    throw new Error(
+      response.status === 429
+        ? "Too many requests. Try again in a minute."
+        : "Could not forget this IP address. Please try again.",
+    );
+  return response.json() as Promise<{ ip: string; deleted: number }>;
+}
+
 export const count = new Intl.NumberFormat("en").format;
 const countries = new Intl.DisplayNames("en", { type: "region" });
 export function countryName(code: string | null | undefined) {

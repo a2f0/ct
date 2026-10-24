@@ -1,5 +1,10 @@
 import { DAY, RETENTION_DAYS, type Sites } from "./env";
-import { type Location, normalizeIp, text } from "./location";
+import {
+  DELETE_UNUSED_LOCATIONS,
+  type Location,
+  normalizeIp,
+  text,
+} from "./location";
 import { APP, LABEL, PAGE, TARGET } from "./validation";
 
 const UNKNOWN = "~unknown";
@@ -190,4 +195,16 @@ export async function recent(
         ? `${last.timestamp}_${last.id}_${last.site}`
         : null,
   };
+}
+
+/**
+ * Deletes every retained click recorded from one address, whatever its site,
+ * dimensions or date, and any location that only those clicks referenced.
+ */
+export async function forgetIp(db: D1Database, ip: string) {
+  const [clicks] = await db.batch([
+    db.prepare("DELETE FROM clicks WHERE ip_address = ?").bind(ip),
+    db.prepare(DELETE_UNUSED_LOCATIONS),
+  ]);
+  return { ip, deleted: clicks?.meta.changes ?? 0 };
 }

@@ -1,5 +1,5 @@
 import { DAY, type Env, json, NOINDEX, RETENTION_DAYS } from "./env";
-import { requestLocation } from "./location";
+import { DELETE_UNUSED_LOCATIONS, requestLocation } from "./location";
 import { normalizeTimes, readBody, validClick } from "./validation";
 
 export async function ingest(request: Request, env: Env): Promise<Response> {
@@ -136,9 +136,7 @@ export default {
       env.DB.prepare("DELETE FROM clicks WHERE timestamp < ?").bind(
         now - RETENTION_DAYS * DAY,
       ),
-      env.DB.prepare(
-        "DELETE FROM locations WHERE NOT EXISTS (SELECT 1 FROM clicks WHERE clicks.location_id = locations.id)",
-      ),
+      env.DB.prepare(DELETE_UNUSED_LOCATIONS),
       env.DB.prepare("DELETE FROM auth_rate_limit WHERE lastRequest < ?").bind(
         now - DAY,
       ),

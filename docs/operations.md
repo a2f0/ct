@@ -26,8 +26,8 @@ are uploaded. Do not reuse another application's database. The scheduled ingesti
 Worker deletes events older than 90 days at 03:17 UTC daily.
 
 After deploying, verify GET /health on the collector, unauthenticated 401s for
-/api/sites, /api/summary and /api/events on the admin host, a redirect to /login
-for /recent, unauthenticated 200s for /favicon.ico, /favicon.svg,
+/api/sites, /api/summary, /api/events and POST /api/forget on the admin host, a
+redirect to /login for /recent, unauthenticated 200s for /favicon.ico, /favicon.svg,
 /apple-touch-icon.png and /robots.txt, and X-Robots-Tag: noindex, nofollow on
 admin responses. In a signed-in session, verify those GET APIs return 200 and
 POST /api/events returns 405. Do not generate production clicks
@@ -112,7 +112,8 @@ bypasses database revocation. Responses are not cached. Signed-in users can chan
 their password at /account; it revokes their other sessions. Logout or a data API
 401 clears the current UI report and shows login. There is no email service;
 operator reset is the recovery path. All provisioned accounts have read access to
-all registered sites; no click-writing or account-management HTTP API is exposed.
+all registered sites and can forget an IP address's clicks; no click-writing or
+account-management HTTP API is exposed.
 
 The admin Worker explicitly sets limits.cpu_ms to 30000 for Better Auth’s scrypt
 password verification. Cloudflare must support that budget; the Workers Free

@@ -1,10 +1,11 @@
 # Click data
 
 The dashboard and every data API require an administrator account and are
-read-only. Registration is disabled; accounts are provisioned through the
-operator CLI. Consumers must still pass stable, non-sensitive labels and route
-templates. The collector accepts registered browser origins without a dashboard
-session; the browser SDK does not authenticate or send cookies.
+read-only, except that administrators can forget an IP address. Registration
+is disabled; accounts are provisioned through the operator CLI. Consumers must
+still pass stable, non-sensitive labels and route templates. The collector
+accepts registered browser origins without a dashboard session; the browser SDK
+does not authenticate or send cookies.
 
 Each row contains the public site name, a random per-event UUID, the click time,
 normalized page name, optional stable app slug, registered deployment environment, element tag, optional explicit data-ct label, request IP,
@@ -23,8 +24,12 @@ mode). It also reads Cloudflare's request.cf country, continent, state/region,
 region code, city, and timezone. These fields are visible to authenticated administrators through the dashboard
 and data API, including full IP addresses. Administrators can list the retained
 clicks for one IP address or location; this is a read-only filter over the same
-rows, not a stored profile. IPs can identify or link activity and
-must not be described as anonymous data. There is no separate visitor profile,
+rows, not a stored profile. After confirming, an administrator can forget an
+address: every retained click recorded from it is deleted, across all sites and
+dates, along with locations no other click uses. CT keeps no record of
+forgotten addresses, so later clicks from the address are stored as usual, and
+D1 Time Travel can still restore deleted rows within its recovery window. IPs
+can identify or link activity and must not be described as anonymous data. There is no separate visitor profile,
 session ID, browser geolocation prompt, or external geolocation service.
 
 These are the network address and approximate location at batch delivery, not
