@@ -32,12 +32,18 @@ RELEASE_PLAY_ASSET_PATHS = [
   RELEASE_NATIVE_DEBUG_SYMBOLS_PATH
 ].freeze
 ANDROID_RELEASE_VERSION_CODE_PROPERTY = 'ctVersionCode'
-# What the readiness lane expects the App Bundle to hold. The merged manifest
-# asks only for INTERNET, which the WebView needs, and AndroidX's permission for
-# its own unexported receivers. Release builds are not minified.
+# What the readiness lane expects the App Bundle to hold: WebView networking,
+# Credential Manager's AndroidX Biometric dependency, and AndroidX's unexported
+# receivers. The biometric permissions do not expose biometric data to CT.
+# Release builds are not minified.
 ANDROID_READINESS_EXPECTATIONS = {
   identifier: NATIVE_APP_IDENTIFIER,
-  permissions: %W[android.permission.INTERNET #{NATIVE_APP_IDENTIFIER}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION],
+  permissions: %W[
+    android.permission.INTERNET
+    android.permission.USE_BIOMETRIC
+    android.permission.USE_FINGERPRINT
+    #{NATIVE_APP_IDENTIFIER}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+  ],
   minified: false
 }.freeze
 
