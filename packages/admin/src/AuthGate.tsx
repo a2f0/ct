@@ -1,12 +1,15 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { App } from "./App";
-import { authClient, rememberPassword, returnTo } from "./authClient";
+import { authClient, returnTo } from "./authClient";
 import { Frame, PolicyLinks } from "./Frame";
+import { rememberPassword } from "./passwords";
 import { SignOut } from "./SignOut";
+import { useSavedSignIn } from "./useSavedSignIn";
 
 export function AuthGate() {
   const { data: session, isPending, error } = authClient.useSession();
   const [expired, setExpired] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   useEffect(() => {
     const expire = () => {
       setExpired(true);
@@ -21,20 +24,29 @@ export function AuthGate() {
     return () => window.removeEventListener("ct:session-expired", expire);
   }, []);
   useEffect(() => {
-    if (session && !expired && location.pathname === "/login")
+    if (session && !expired && !signingIn && location.pathname === "/login")
       location.replace(returnTo());
-  }, [session, expired]);
+  }, [session, expired, signingIn]);
   if (
-    isPending ||
-    (session && !expired && !error && location.pathname === "/login")
+    !signingIn &&
+    (isPending ||
+      (session && !expired && !error && location.pathname === "/login"))
   )
     return (
       <div className="auth-shell" role="status">
         Checking your session…
       </div>
     );
-  if (!session || expired || error)
-    return <Login expired={expired} unavailable={Boolean(error)} />;
+  // A session refresh must not unmount the form or navigate before the save
+  // request resolves. Android waits for dismissal; iOS acknowledges its offer.
+  if (!session || expired || error || signingIn)
+    return (
+      <Login
+        expired={expired}
+        unavailable={Boolean(error)}
+        onBusy={setSigningIn}
+      />
+    );
   return location.pathname === "/account" ? (
     <Account email={session.user.email} />
   ) : (
@@ -44,18 +56,35 @@ export function AuthGate() {
 function Login({
   expired,
   unavailable,
+  onBusy,
 }: {
   expired: boolean;
   unavailable: boolean;
+  onBusy: (busy: boolean) => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const savedSignIn = useSavedSignIn();
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
+    // Password managers can update the DOM without firing React's onChange.
+    const fields = new FormData(event.currentTarget);
+    const email = String(fields.get("email") ?? "");
+    const password = String(fields.get("password") ?? "");
+    const needsSave = !savedSignIn.isSaved(
+      event.currentTarget,
+      email,
+      password,
+    );
+    setEmail(email);
+    setPassword(password);
     setBusy(true);
+    onBusy(true);
     setError("");
+    let navigating = false;
     try {
       const result = await authClient.signIn.email({ email, password });
       if (result.error) {
@@ -69,12 +98,16 @@ function Login({
         setPassword("");
         return;
       }
-      await rememberPassword(email, password);
+      if (needsSave) await rememberPassword(email, password);
       location.assign(returnTo());
+      navigating = true;
     } catch {
       setError("Sign-in is temporarily unavailable. Please try again.");
     } finally {
-      setBusy(false);
+      if (!navigating) {
+        setBusy(false);
+        onBusy(false);
+      }
     }
   }
   return (
@@ -92,7 +125,12 @@ function Login({
           Could not verify your session. Please try signing in again.
         </p>
       )}
-      <form onSubmit={submit}>
+      <form
+        method="post"
+        autoComplete="on"
+        onInput={savedSignIn.onInput}
+        onSubmit={submit}
+      >
         <label>
           Email
           <input
@@ -182,7 +220,7 @@ function Account({ email }: { email: string }) {
       <p>
         <a href="/">Back to overview</a>
       </p>
-      <form onSubmit={submit}>
+      <form method="post" autoComplete="on" onSubmit={submit}>
         <input
           type="email"
           name="email"

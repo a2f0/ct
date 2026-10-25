@@ -29,7 +29,7 @@ const Email = () => <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>;
 function Privacy() {
   return (
     <Policy title="Privacy policy">
-      <p className="muted">Effective October 24, 2026 (UTC)</p>
+      <p className="muted">Effective October 25, 2026 (UTC)</p>
       <p>
         CT is a small click tracker. This policy covers its private dashboard at
         ct-admin.a2f0.net and the CT app for iPhone, iPad, and Android, which
@@ -56,6 +56,12 @@ function Privacy() {
         it; email us to have it deleted.
       </p>
       <h2>In the app</h2>
+      <p>
+        After a successful sign-in or password change, CT can offer your email
+        and password to your browser or device's password manager for saving.
+        That password manager controls storage and syncing under your settings.
+        CT does not store an additional copy of your password or log it.
+      </p>
       <p>
         The app keeps its session cookie in your device's cookie store and your
         light or dark theme choice in its own storage, and sends the theme to no
@@ -87,8 +93,9 @@ function Privacy() {
         <a href="https://www.cloudflare.com/privacypolicy/">
           Cloudflare's privacy policy
         </a>
-        . No one else receives this data. Deleted records can remain in
-        Cloudflare's database recovery history until its recovery window ends.
+        . Apart from password saving described above, no other service receives
+        CT's account or click data. Deleted records can remain in Cloudflare's
+        database recovery history until its recovery window ends.
       </p>
       <h2>Security</h2>
       <p>

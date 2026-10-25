@@ -204,7 +204,9 @@ handling described in the [API guide](api.md), so deploy a Worker change the app
 depends on before uploading the build that needs it. Store uploads are manual
 and run only when requested; neither a merge nor a Worker deployment publishes
 an app. Audit a store candidate with the [readiness lanes and skill](readiness.md)
-and record the result in its PR.
+and record the result in its PR. Native password saving also needs the
+[Associated Domains and signing-profile setup](../packages/app-capacitor/README.md#saved-passwords)
+before its first store release.
 
 ## Browser packages
 

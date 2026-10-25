@@ -16,8 +16,30 @@ appId: net.a2f0.ct
 - tapOn: "Password"
 - inputText: "isolated-browser-password-0001"
 - pressKey: Enter
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Save password\\?"
+          timeout: 15000
+      - tapOn: "Not now"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      # A provider may show its sheet after the sign-in request returns. An
+      # emulator without a configured provider goes straight to the dashboard.
+      - extendedWaitUntil:
+          visible: "(?i).*save.*password.*|Click activity\\."
+          timeout: 30000
+      - runFlow:
+          when:
+            visible: "(?i).*save.*password.*"
+          commands:
+            - pressKey: Back
 - extendedWaitUntil:
-    visible: "Every recorded interaction"
+    visible: "Click activity\\."
     timeout: 30000
 - tapOn: ".*Recent clicks"
 # The status follows the table, below the fold on the smallest iPhone.
@@ -29,10 +51,10 @@ appId: net.a2f0.ct
 - stopApp
 - launchApp
 - extendedWaitUntil:
-    visible: "Every recorded interaction"
+    visible: "Click activity\\.|Recent clicks\\."
     timeout: 30000
-- tapOn: ".*Light mode"
-- assertVisible: ".*Dark mode"
+- tapOn: "(?i).*light mode"
+- assertVisible: "(?i).*dark mode"
 - tapOn: "Sign out"
 - extendedWaitUntil:
     visible: "Access your click activity."

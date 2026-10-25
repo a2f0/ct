@@ -117,6 +117,15 @@ test("unauthenticated Worker denies every data method, redirects deep links, and
   page,
   request,
 }, info) => {
+  const association = await request.get(
+    `${admin}/.well-known/apple-app-site-association`,
+    { maxRedirects: 0 },
+  );
+  expect(association.status()).toBe(200);
+  expect(association.headers()["content-type"]).toBe("application/json");
+  expect(await association.json()).toEqual({
+    webcredentials: { apps: ["H4QLD7XWGS.net.a2f0.ct"] },
+  });
   for (const path of ["/api/sites", "/api/summary", "/api/events"]) {
     for (const method of [
       "GET",

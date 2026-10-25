@@ -23,6 +23,13 @@ Inserts use up to nine clicks per statement (99 bindings), so a full 50-click
 batch plus its location uses seven statements in a single atomic D1 batch. This
 stays below D1's 100-parameter limit and its free-plan query budget.
 
+GET/HEAD https://ct-admin.a2f0.net/.well-known/apple-app-site-association is public
+JSON identifying `H4QLD7XWGS.net.a2f0.ct` for Apple's `webcredentials` service.
+It works without authentication, redirects, or database access; other methods
+return 405 and other `.well-known` paths remain private. The response contains
+no analytics or accounts. See the [app guide](../packages/app-capacitor/README.md#saved-passwords)
+for password-manager setup.
+
 The admin Worker exposes GET /api/sites, /api/summary and /api/events. Optional site, app, environment,
 from and to filters apply to both data endpoints; dates are ISO timestamps, from
 inclusive and to exclusive. The exact-match drill-down filters ip, country,

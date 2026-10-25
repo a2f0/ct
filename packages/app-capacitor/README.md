@@ -27,6 +27,33 @@ scale it themselves, and on iOS `src/textZoom.ts` applies the Dynamic Type
 setting through `@capacitor/text-zoom` on each page load and whenever the app
 becomes active again, including after Control Center's text size control. The browser extension downloads are not shown.
 
+## Saved passwords
+
+After a successful sign-in or password change, the shell offers the credentials
+to the system password manager through its local `PasswordManager` plugin.
+The WebView cannot detect successful native HTTP sign-ins itself. Credentials
+stay in memory until handed to the password manager; the app does not persist
+them. Declining or failing to save never prevents sign-in. Credentials filled
+by AutoFill are not offered again unless the email or password changes.
+
+- iOS shows **Save password?** with **Not now** and **Save password**. On iOS
+  26.2 and later it uses `ASCredentialDataManager`; older versions use shared
+  web credentials. The system acknowledges the request, not confirmed storage.
+  AutoFill supplies saved credentials through the keyboard. The app's
+  `webcredentials:ct-admin.a2f0.net` entitlement and the admin Worker's
+  `/.well-known/apple-app-site-association` response associate the app with the
+  dashboard, so Safari and the app can share passwords.
+- Android uses Credential Manager's save sheet. Its Play services adapter
+  supports Android versions before 14. Passwords are saved for the app.
+
+Before the first release with password saving, deploy the admin Worker, enable
+Associated Domains for App ID `net.a2f0.ct` in the Apple Developer account, and
+renew its signing profile with `bun run ios:profiles force:true`. The association
+uses the shipped app's public identifier `H4QLD7XWGS.net.a2f0.ct`. Verify the
+signed candidate contains the entitlement and test saving and keyboard AutoFill
+on a device with a configured password manager. Simulator tests cover the save
+offer and cancellation, not storage in a person's password manager.
+
 ## Set up
 
 Install the pinned Ruby with mise, then the Fastlane bundle:
