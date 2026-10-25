@@ -148,6 +148,34 @@ async function submit() {
   });
 }
 
+for (const source of ["typing", "paste", "silent", "autofill"] as const) {
+  test(`password visibility preserves ${source} credentials without submitting`, async () => {
+    await credentials(source);
+    const field = input("password");
+    const toggle = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Show password"]',
+    );
+    if (!toggle) throw new Error("Missing password toggle");
+    expect(field.type).toBe("password");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    for (const visible of [true, false, true]) {
+      await act(async () => toggle.click());
+      expect(input("password")).toBe(field);
+      expect(field.type).toBe(visible ? "text" : "password");
+      expect(field.value).toBe(password);
+      expect(input("email").value).toBe(email);
+      expect(toggle.getAttribute("aria-pressed")).toBe(String(visible));
+      expect(submitted).toEqual([]);
+    }
+    await submit();
+    expect(field.type).toBe("password");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(submitted).toEqual([{ email, password }]);
+    expect(offered).toEqual(source === "autofill" ? [] : [[email, password]]);
+    expect(navigations).toEqual(["/"]);
+  });
+}
+
 for (const source of ["typing", "paste", "silent"] as const) {
   test(`offers successfully submitted credentials from ${source}`, async () => {
     await credentials(source);
@@ -205,11 +233,18 @@ for (const source of ["typing", "silent"] as const) {
   test(`failed ${source} authentication keeps the email and never offers to save`, async () => {
     result = { error: { status: 401 } };
     await credentials(source);
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('button[aria-label="Show password"]')
+        ?.click(),
+    );
+    expect(input("password").type).toBe("text");
     await submit();
     expect(offered).toEqual([]);
     expect(navigations).toEqual([]);
     expect(input("email").value).toBe(email);
     expect(input("password").value).toBe("");
+    expect(input("password").type).toBe("password");
   });
 }
 for (const autofilled of ["email", "password"]) {

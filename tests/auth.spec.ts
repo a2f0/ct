@@ -227,6 +227,58 @@ test("unauthenticated Worker denies every data method, redirects deep links, and
   ).toBe(true);
 });
 
+test("password visibility works with the keyboard without submitting or losing autofill", async ({
+  page,
+}) => {
+  let signIns = 0;
+  await page.route("**/api/auth/sign-in/email", (route) => {
+    signIns++;
+    return route.fulfill({
+      status: 401,
+      json: { message: "Invalid credentials" },
+    });
+  });
+  await page.goto(`${admin}/login`);
+  const password = page.getByLabel("Password", { exact: true });
+  const toggle = page.getByRole("button", {
+    name: "Show password",
+    exact: true,
+  });
+  await expect(password).toHaveAttribute("type", "password");
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  // Model a password manager that fills without dispatching input events.
+  await page.getByLabel("Email", { exact: true }).evaluate((element) => {
+    (element as HTMLInputElement).value = "fixture@example.test";
+  });
+  await password.evaluate((element, value) => {
+    (element as HTMLInputElement).value = value;
+  }, initialPassword);
+  await password.focus();
+  await page.keyboard.press("Tab");
+  await expect(toggle).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(password).toHaveAttribute("type", "text");
+  await expect(password).toHaveValue(initialPassword);
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await expect(password).toHaveAttribute("spellcheck", "false");
+  await expect(password).toHaveAttribute("autocorrect", "off");
+  await expect(password).toHaveAttribute("autocapitalize", "none");
+  await page.keyboard.press("Space");
+  await expect(password).toHaveAttribute("type", "password");
+  await expect(password).toHaveValue(initialPassword);
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByLabel("Email", { exact: true })).toHaveValue(
+    "fixture@example.test",
+  );
+  expect(signIns).toBe(0);
+  await toggle.click();
+  await expect(password).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(password).toHaveAttribute("type", "password");
+  expect(signIns).toBe(1);
+});
+
 test("the private dashboard is noindexed and its robots.txt still allows crawling", async ({
   page,
   request,
