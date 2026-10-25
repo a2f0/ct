@@ -541,6 +541,8 @@ puts JSON.generate(
         identifier: app,
         permissions: [
           "android.permission.INTERNET",
+          "android.permission.USE_BIOMETRIC",
+          "android.permission.USE_FINGERPRINT",
           `${app}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`,
         ],
         minified: false,

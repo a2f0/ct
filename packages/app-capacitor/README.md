@@ -44,7 +44,11 @@ by AutoFill are not offered again unless the email or password changes.
   `/.well-known/apple-app-site-association` response associate the app with the
   dashboard, so Safari and the app can share passwords.
 - Android uses Credential Manager's save sheet. Its Play services adapter
-  supports Android versions before 14. Passwords are saved for the app.
+  supports Android versions before 14. Passwords are saved for the app. Its
+  AndroidX Biometric dependency adds the normal `USE_BIOMETRIC` and
+  `USE_FINGERPRINT` permissions to the merged manifest; CT does not receive or
+  store biometric data. The readiness lane checks these alongside the existing
+  networking and unexported-receiver permissions.
 
 Before the first release with password saving, deploy the admin Worker, enable
 Associated Domains for App ID `net.a2f0.ct` in the Apple Developer account, and
