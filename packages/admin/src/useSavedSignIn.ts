@@ -7,9 +7,6 @@ export function useSavedSignIn() {
     undefined,
   );
   return {
-    clear: () => {
-      saved.current = undefined;
-    },
     onInput(event: FormEvent<HTMLFormElement>) {
       const input = event.target;
       // WKWebView's login AutoFill uses setValueForUser, which dispatches a

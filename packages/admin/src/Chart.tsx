@@ -56,7 +56,7 @@ export function Chart({
       </svg>
       <div className="chart-labels">
         <span>{bars[0]?.day}</span>
-        <span>{bars.at(-1)?.day}</span>
+        <span>{bars[bars.length - 1]?.day}</span>
       </div>
     </div>
   );

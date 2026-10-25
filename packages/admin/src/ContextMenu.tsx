@@ -169,7 +169,7 @@ export function ContextMenu({
       ArrowDown: options[(index + 1) % options.length],
       ArrowUp: options[(index - 1 + options.length) % options.length],
       Home: options[0],
-      End: options.at(-1),
+      End: options[options.length - 1],
     };
     const next = moves[event.key];
     if (!next) return;

@@ -46,7 +46,8 @@ public class PasswordManagerPlugin: CAPPlugin, CAPBridgedPlugin {
     private func offerSave(domain: String, username: String, password: String,
                            from presenter: UIViewController, window: UIWindow) {
         // ASCredentialDataManager does not guarantee a visible system prompt.
-        // Ask explicitly, including on older iOS where the legacy API can save silently.
+        // Ask explicitly on every supported iOS version. The legacy API may
+        // additionally request system consent after the person accepts this offer.
         presenter.view.endEditing(true)
         let alert = UIAlertController(
             title: "Save password?",

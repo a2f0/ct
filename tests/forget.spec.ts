@@ -44,6 +44,9 @@ test.beforeEach(async ({ page }) => {
 test("IP addresses open a styled menu from the pointer, keyboard and touch instead of the browser menu", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(Array.prototype, "at", { value: undefined });
+  });
   await page.route("**/api/events?**", (route) =>
     route.fulfill({
       json: { events: [event(1, ip), event(2, null)], nextCursor: null },

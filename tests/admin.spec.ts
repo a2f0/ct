@@ -22,12 +22,13 @@ const rows = (start: number, length: number) =>
 test("separate routes load only their own report and preserve filters, reloads and history", async ({
   page,
 }) => {
-  // URLSearchParams.size is absent in older supported browsers.
-  await page.addInitScript(() =>
+  // These helpers are absent in older supported Android WebViews.
+  await page.addInitScript(() => {
     Object.defineProperty(URLSearchParams.prototype, "size", {
       value: undefined,
-    }),
-  );
+    });
+    Object.defineProperty(Array.prototype, "at", { value: undefined });
+  });
   const errors: string[] = [];
   const requests: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));

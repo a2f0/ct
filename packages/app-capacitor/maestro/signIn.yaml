@@ -27,9 +27,17 @@ appId: net.a2f0.ct
 - runFlow:
     when:
       platform: Android
-      visible: "Save password\\?"
     commands:
-      - tapOn: "Not now"
+      # A provider may show its sheet after the sign-in request returns. An
+      # emulator without a configured provider goes straight to the dashboard.
+      - extendedWaitUntil:
+          visible: "(?i).*save.*password.*|Every recorded interaction"
+          timeout: 30000
+      - runFlow:
+          when:
+            visible: "(?i).*save.*password.*"
+          commands:
+            - pressKey: Back
 - extendedWaitUntil:
     visible: "Every recorded interaction"
     timeout: 30000

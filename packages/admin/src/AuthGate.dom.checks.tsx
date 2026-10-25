@@ -209,6 +209,21 @@ test("failed authentication never offers to save", async () => {
   expect(navigations).toEqual([]);
   expect(input("password").value).toBe("");
 });
+for (const autofilled of ["email", "password"]) {
+  test(`offers to save when only ${autofilled} matches CSS autofill`, async () => {
+    await credentials();
+    const emailMatch = spyOn(input("email"), "matches").mockReturnValue(
+      autofilled === "email",
+    );
+    const passwordMatch = spyOn(input("password"), "matches").mockReturnValue(
+      autofilled === "password",
+    );
+    await submit();
+    expect(offered).toEqual([[email, password]]);
+    emailMatch.mockRestore();
+    passwordMatch.mockRestore();
+  });
+}
 test("declining or failing to save still completes login", async () => {
   configurePasswordSaver(async () => {
     throw new Error("Unavailable");
