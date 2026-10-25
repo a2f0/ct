@@ -82,6 +82,7 @@ function Login({
     );
     setEmail(email);
     setPassword(password);
+    setPasswordVisible(false);
     setBusy(true);
     onBusy(true);
     setError("");
@@ -165,7 +166,6 @@ function Login({
               aria-controls="login-password"
               aria-label="Show password"
               aria-pressed={passwordVisible}
-              title={passwordVisible ? "Hide password" : "Show password"}
               onClick={(event) => {
                 // Preserve credentials filled without React change events.
                 const form = event.currentTarget.form;

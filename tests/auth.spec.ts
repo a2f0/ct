@@ -260,7 +260,6 @@ test("password visibility works with the keyboard without submitting or losing a
   await expect(password).toHaveAttribute("type", "text");
   await expect(password).toHaveValue(initialPassword);
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
-  await expect(toggle).toHaveAttribute("title", "Hide password");
   await expect(password).toHaveAttribute("spellcheck", "false");
   await expect(password).toHaveAttribute("autocorrect", "off");
   await expect(password).toHaveAttribute("autocapitalize", "none");
@@ -272,8 +271,11 @@ test("password visibility works with the keyboard without submitting or losing a
     "fixture@example.test",
   );
   expect(signIns).toBe(0);
+  await toggle.click();
+  await expect(password).toHaveAttribute("type", "text");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert")).toBeVisible();
+  await expect(password).toHaveAttribute("type", "password");
   expect(signIns).toBe(1);
 });
 

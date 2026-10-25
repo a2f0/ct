@@ -168,6 +168,8 @@ for (const source of ["typing", "paste", "silent", "autofill"] as const) {
       expect(submitted).toEqual([]);
     }
     await submit();
+    expect(field.type).toBe("password");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
     expect(submitted).toEqual([{ email, password }]);
     expect(offered).toEqual(source === "autofill" ? [] : [[email, password]]);
     expect(navigations).toEqual(["/"]);
@@ -231,11 +233,18 @@ for (const source of ["typing", "silent"] as const) {
   test(`failed ${source} authentication keeps the email and never offers to save`, async () => {
     result = { error: { status: 401 } };
     await credentials(source);
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('button[aria-label="Show password"]')
+        ?.click(),
+    );
+    expect(input("password").type).toBe("text");
     await submit();
     expect(offered).toEqual([]);
     expect(navigations).toEqual([]);
     expect(input("email").value).toBe(email);
     expect(input("password").value).toBe("");
+    expect(input("password").type).toBe("password");
   });
 }
 for (const autofilled of ["email", "password"]) {
