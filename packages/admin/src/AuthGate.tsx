@@ -37,8 +37,8 @@ export function AuthGate() {
         Checking your session…
       </div>
     );
-  // A session refresh must not unmount the form or navigate while the native
-  // password manager is presenting its save offer.
+  // A session refresh must not unmount the form or navigate before the save
+  // request resolves. Android waits for dismissal; iOS acknowledges its offer.
   if (!session || expired || error || signingIn)
     return (
       <Login
@@ -82,6 +82,7 @@ function Login({
     setBusy(true);
     onBusy(true);
     setError("");
+    let navigating = false;
     try {
       const result = await authClient.signIn.email({ email, password });
       if (result.error) {
@@ -97,11 +98,14 @@ function Login({
       }
       if (needsSave) await rememberPassword(email, password);
       location.assign(returnTo());
+      navigating = true;
     } catch {
       setError("Sign-in is temporarily unavailable. Please try again.");
     } finally {
-      setBusy(false);
-      onBusy(false);
+      if (!navigating) {
+        setBusy(false);
+        onBusy(false);
+      }
     }
   }
   return (

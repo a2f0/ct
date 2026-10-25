@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { test } from "bun:test";
 
 // Isolate the auth-client mock and browser globals from the real Worker/auth tests.
 test("native login and password manager behavior", async () => {
@@ -16,5 +16,4 @@ test("native login and password manager behavior", async () => {
     new Response(child.stderr).text(),
   ]);
   if (code !== 0) throw new Error(stdout + stderr);
-  expect(code).toBe(0);
 }, 30_000);

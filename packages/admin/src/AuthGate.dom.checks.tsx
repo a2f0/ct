@@ -233,7 +233,7 @@ test("declining or failing to save still completes login", async () => {
   expect(navigations).toEqual(["/"]);
   expect(container.querySelector('[role="alert"]')).toBeNull();
 });
-test("session refresh waits for the password manager before navigating", async () => {
+test("session refresh waits for a pending save request and navigates once", async () => {
   let finish: (() => void) | undefined;
   configurePasswordSaver(
     () =>
@@ -248,7 +248,7 @@ test("session refresh waits for the password manager before navigating", async (
   expect(container.querySelector("form")).not.toBeNull();
   expect(navigations).toEqual([]);
   await act(async () => finish?.());
-  expect(navigations).toContain("/");
+  expect(navigations).toEqual(["/"]);
 });
 test("successful password changes offer the new credential; failures do not", async () => {
   dom.happyDOM.setURL("https://ct.test/account");

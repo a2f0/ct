@@ -31,7 +31,7 @@ appId: net.a2f0.ct
       # A provider may show its sheet after the sign-in request returns. An
       # emulator without a configured provider goes straight to the dashboard.
       - extendedWaitUntil:
-          visible: "(?i).*save.*password.*|Every recorded interaction"
+          visible: "(?i).*save.*password.*|Click activity\\."
           timeout: 30000
       - runFlow:
           when:
@@ -39,7 +39,7 @@ appId: net.a2f0.ct
           commands:
             - pressKey: Back
 - extendedWaitUntil:
-    visible: "Every recorded interaction"
+    visible: "Click activity\\."
     timeout: 30000
 - tapOn: ".*Recent clicks"
 # The status follows the table, below the fold on the smallest iPhone.
@@ -51,10 +51,10 @@ appId: net.a2f0.ct
 - stopApp
 - launchApp
 - extendedWaitUntil:
-    visible: "Every recorded interaction"
+    visible: "Click activity\\.|Recent clicks\\."
     timeout: 30000
-- tapOn: ".*Light mode"
-- assertVisible: ".*Dark mode"
+- tapOn: "(?i).*light mode"
+- assertVisible: "(?i).*dark mode"
 - tapOn: "Sign out"
 - extendedWaitUntil:
     visible: "Access your click activity."
