@@ -47,6 +47,26 @@ function withNativeOrigin(request: Request, env: AdminEnv): Request {
 async function route(request: Request, env: AdminEnv): Promise<Response> {
   request = withNativeOrigin(request, env);
   const url = new URL(request.url);
+  // Public association metadata lets iOS share passwords with the CT app.
+  // This exact route needs neither a session nor a functioning auth database.
+  if (url.pathname === "/.well-known/apple-app-site-association") {
+    if (!["GET", "HEAD"].includes(request.method))
+      return json({ error: "Method not allowed" }, 405, { Allow: "GET, HEAD" });
+    return new Response(
+      request.method === "HEAD"
+        ? null
+        : JSON.stringify({
+            webcredentials: { apps: ["H4QLD7XWGS.net.a2f0.ct"] },
+          }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=3600",
+          "X-Content-Type-Options": "nosniff",
+        },
+      },
+    );
+  }
   if (url.pathname.startsWith("/api/auth/")) {
     const method = new Map([
       ["/api/auth/sign-in/email", "POST"],

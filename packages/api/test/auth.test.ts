@@ -124,6 +124,30 @@ test("favicons load without a session so the login page shows them; similar path
     expect(response.headers.get("Location")).toStartWith("/login?returnTo=");
   }
 });
+test("Apple password association is public JSON even during an auth outage; only its exact path is public", async () => {
+  const path = "/.well-known/apple-app-site-association";
+  const response = await call(path);
+  expect(response.status).toBe(200);
+  expect(response.headers.get("Content-Type")).toBe("application/json");
+  expect(response.headers.get("Location")).toBeNull();
+  expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+  expect(await response.json()).toEqual({
+    webcredentials: { apps: ["H4QLD7XWGS.net.a2f0.ct"] },
+  });
+  const head = await call(path, { method: "HEAD" });
+  expect(head.status).toBe(200);
+  expect(await head.text()).toBe("");
+  expect((await call(path, { method: "POST" })).status).toBe(405);
+  for (const privatePath of [
+    `${path}/`,
+    `${path}.json`,
+    "/.well-known/private",
+  ])
+    expect((await call(privatePath)).status).toBe(302);
+  env.BETTER_AUTH_SECRET = "";
+  expect((await call(path)).status).toBe(200);
+  expect((await call("/api/sites")).status).toBe(503);
+});
 test("the policy pages load without a session; similar paths stay private", async () => {
   for (const path of ["/privacy", "/support"])
     for (const method of ["GET", "HEAD"]) {

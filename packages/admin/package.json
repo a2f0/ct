@@ -4,7 +4,8 @@
   "type": "module",
   "license": "UNLICENSED",
   "exports": {
-    "./main": "./src/main.tsx"
+    "./main": "./src/main.tsx",
+    "./passwords": "./src/passwords.ts"
   },
   "scripts": {
     "build": "agent-tool --repo ../.. images build favicons && vite build && bun build.ts",

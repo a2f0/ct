@@ -16,6 +16,20 @@ appId: net.a2f0.ct
 - tapOn: "Password"
 - inputText: "isolated-browser-password-0001"
 - pressKey: Enter
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Save password\\?"
+          timeout: 15000
+      - tapOn: "Not now"
+- runFlow:
+    when:
+      platform: Android
+      visible: "Save password\\?"
+    commands:
+      - tapOn: "Not now"
 - extendedWaitUntil:
     visible: "Every recorded interaction"
     timeout: 30000
