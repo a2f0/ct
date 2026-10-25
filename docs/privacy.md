@@ -96,6 +96,14 @@ analytics or crash-reporting SDK, and keeps its theme preference in the
 WebView's local storage. Its iOS privacy manifest declares only the
 administrator email address, linked to the account for app functionality.
 
+After a successful sign-in or password change, the dashboard and native app can
+offer the administrator's email and password to the browser or device's password
+manager for saving. The chosen password manager controls storage and syncing
+under the administrator's settings. CT keeps the credentials only in memory
+for authentication and the save offer; it does not persist another copy or log
+them. This is separate from the salted password hash in the auth database and
+does not involve click data.
+
 The public privacy policy at /privacy on the dashboard host
 (packages/admin/src/Policies.tsx) summarizes this document for the store
 listings and the app; change it in the same commit as any change here that it

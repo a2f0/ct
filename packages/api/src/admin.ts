@@ -56,6 +56,7 @@ async function route(request: Request, env: AdminEnv): Promise<Response> {
       request.method === "HEAD"
         ? null
         : JSON.stringify({
+            // The prefix must match the iOS release signing Team ID.
             webcredentials: { apps: ["H4QLD7XWGS.net.a2f0.ct"] },
           }),
       {

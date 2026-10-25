@@ -201,14 +201,17 @@ test("CSS autofill detection skips only when both credential fields are autofill
   emailMatch.mockRestore();
   passwordMatch.mockRestore();
 });
-test("failed authentication never offers to save", async () => {
-  result = { error: { status: 401 } };
-  await credentials();
-  await submit();
-  expect(offered).toEqual([]);
-  expect(navigations).toEqual([]);
-  expect(input("password").value).toBe("");
-});
+for (const source of ["typing", "silent"] as const) {
+  test(`failed ${source} authentication keeps the email and never offers to save`, async () => {
+    result = { error: { status: 401 } };
+    await credentials(source);
+    await submit();
+    expect(offered).toEqual([]);
+    expect(navigations).toEqual([]);
+    expect(input("email").value).toBe(email);
+    expect(input("password").value).toBe("");
+  });
+}
 for (const autofilled of ["email", "password"]) {
   test(`offers to save when only ${autofilled} matches CSS autofill`, async () => {
     await credentials();
@@ -241,11 +244,13 @@ test("session refresh waits for a pending save request and navigates once", asyn
         finish = resolve;
       }),
   );
-  await credentials();
+  await credentials("silent");
   await submit();
   session = { ...session, data: { user: { email } } } as typeof session;
   await act(async () => root.render(<AuthGate />));
   expect(container.querySelector("form")).not.toBeNull();
+  expect(input("email").value).toBe(email);
+  expect(input("password").value).toBe(password);
   expect(navigations).toEqual([]);
   await act(async () => finish?.());
   expect(navigations).toEqual(["/"]);

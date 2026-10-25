@@ -79,6 +79,8 @@ function Login({
       email,
       password,
     );
+    setEmail(email);
+    setPassword(password);
     setBusy(true);
     onBusy(true);
     setError("");
