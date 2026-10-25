@@ -148,6 +148,32 @@ async function submit() {
   });
 }
 
+for (const source of ["typing", "paste", "silent", "autofill"] as const) {
+  test(`password visibility preserves ${source} credentials without submitting`, async () => {
+    await credentials(source);
+    const field = input("password");
+    const toggle = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Show password"]',
+    );
+    if (!toggle) throw new Error("Missing password toggle");
+    expect(field.type).toBe("password");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    for (const visible of [true, false, true]) {
+      await act(async () => toggle.click());
+      expect(input("password")).toBe(field);
+      expect(field.type).toBe(visible ? "text" : "password");
+      expect(field.value).toBe(password);
+      expect(input("email").value).toBe(email);
+      expect(toggle.getAttribute("aria-pressed")).toBe(String(visible));
+      expect(submitted).toEqual([]);
+    }
+    await submit();
+    expect(submitted).toEqual([{ email, password }]);
+    expect(offered).toEqual(source === "autofill" ? [] : [[email, password]]);
+    expect(navigations).toEqual(["/"]);
+  });
+}
+
 for (const source of ["typing", "paste", "silent"] as const) {
   test(`offers successfully submitted credentials from ${source}`, async () => {
     await credentials(source);

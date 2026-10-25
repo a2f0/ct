@@ -64,6 +64,7 @@ function Login({
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const savedSignIn = useSavedSignIn();
@@ -142,18 +143,58 @@ function Login({
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
-        <label>
-          Password
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            required
-            maxLength={128}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+        <div className="password-field">
+          <label htmlFor="login-password">Password</label>
+          <div className="password-input">
+            <input
+              id="login-password"
+              type={passwordVisible ? "text" : "password"}
+              name="password"
+              autoComplete="current-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              required
+              maxLength={128}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              aria-controls="login-password"
+              aria-label="Show password"
+              aria-pressed={passwordVisible}
+              title={passwordVisible ? "Hide password" : "Show password"}
+              onClick={(event) => {
+                // Preserve credentials filled without React change events.
+                const form = event.currentTarget.form;
+                if (!form) return;
+                const fields = new FormData(form);
+                setEmail(String(fields.get("email") ?? ""));
+                setPassword(String(fields.get("password") ?? ""));
+                setPasswordVisible((visible) => !visible);
+              }}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                <circle cx="12" cy="12" r="3" />
+                {passwordVisible && <path d="m3 3 18 18" />}
+              </svg>
+            </button>
+          </div>
+        </div>
         {error && (
           <p className="error" role="alert">
             {error}
