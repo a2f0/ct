@@ -5,8 +5,8 @@ a Cloudflare Worker stores them in D1 (SQLite), and an authenticated dashboard
 shows activity and can forget the clicks recorded from an IP address. A shared
 browser extension disables CT in Chrome and Firefox.
 
-- API: https://ct.a2f0.net
-- Dashboard: https://ct-admin.a2f0.net
+- API: [ct.a2f0.net](https://ct.a2f0.net)
+- Dashboard: [ct-admin.a2f0.net](https://ct-admin.a2f0.net)
 - Integrations: see the [registered sites and apps](docs/operations.md#registered-integrations)
 
 ## Workspaces
