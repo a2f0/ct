@@ -33,9 +33,8 @@ resolution and every CI, test, and package-script caller consistent when moving 
 script. Shared review, PR, version, image, and managed-skill behavior comes from
 the pinned agent-tool; repository-specific behavior stays here.
 
-See [repository guidance](../AGENTS.md) for required checks and shipping policy,
-[operations](../docs/operations.md) for deployment and account commands, and the
-[API guide](../docs/api.md) for endpoint behavior.
+See [operations](../docs/operations.md) for deployment and account commands,
+and the [API guide](../docs/api.md) for endpoint behavior.
 
 Pre-push validates commits newly introduced to a named remote. It excludes that
 remote's tracking refs even when updating an existing branch, so a normal merge

@@ -2,7 +2,8 @@
 
 Framework-free, batched click tracking. Importing or constructing a tracker starts
 no listeners, timers, storage writes, or requests. Call init explicitly in the
-deployed browser bootstrap; keep that call out of shared components and tests.
+deployed browser bootstrap, behind an exact check for the registered production
+or staging origin; keep that call out of shared components and tests.
 
 Install with `bun add @a2f0/ct-client` or `npm install @a2f0/ct-client`.
 
@@ -34,7 +35,7 @@ Validate configuration before initializing the tracker.
 | site | Required | Public site identifier, lowercase letters/numbers/hyphens |
 | app | null | Default app slug, lowercase letters/numbers/hyphens, 1–64 characters |
 | environment | Inferred by server | production or staging; must match registered site and exact origin |
-| page | () => '/' | Stable route template, maximum 200 characters |
+| page | () => '/' | Stable route template without record IDs or tokens, maximum 200 characters |
 | capture | interactive | all elements, interactive controls, or marked elements |
 | batchSize | 20 | 1–50 clicks per request |
 | flushIntervalMs | 5000 | 100–60000 milliseconds |
@@ -63,11 +64,13 @@ null and environment is inferred. Never put user data in app names. Initialize
 only on deliberately registered production or staging origins, never on local,
 preview, test or automated pages.
 
-Only trusted clicks are captured. init is idempotent and returns whether capture
-is currently allowed. destroy removes listeners, aborts requests, and discards
-the queue; a later init can start it again. flush sends one batch and schedules
-remaining work. Network errors, timeouts, 408 and 429 retry with capped backoff;
-other 4xx responses discard the rejected batch. Event IDs make retries idempotent.
+init refuses WebDriver-controlled browsers: it returns false and adds no
+listeners. Only trusted clicks are captured; synthetic clicks are ignored. init
+is idempotent and returns whether capture is currently allowed. destroy removes
+listeners, aborts requests, and discards the queue; a later init can start it
+again. flush sends one batch and schedules remaining work. Network errors,
+timeouts, 408 and 429 retry with capped backoff; other 4xx responses discard
+the rejected batch. Event IDs make retries idempotent.
 
 ## Opt out
 
