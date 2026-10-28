@@ -16,8 +16,23 @@ attribution footers.
 
 Validate with bun run check, bun run test, bun run build, bun run package:smoke,
 and bun run test:browser. CI's verify job gates merges, including skill drift.
-Capture noisy commands with bun run agent:run --label <check> -- <command> and
-inspect relevant warnings and artifacts. Keep independent review verdicts visible.
+
+Run finite, noisy commands, such as installs, builds, tests, linters, and Git
+commands that run hooks, through
+`bun run agent:run --label <name> -- <command> [args...]`. It keeps complete
+output in a private log, preserves the exit status, and prints a compact
+receipt, with a bounded excerpt of the log on failure. Read more with
+`bun run agent:logs <log-path>`, raising `--tail-lines` or `--max-bytes` as
+needed, or with a targeted search of the log. A zero exit does not rule out
+warnings: inspect required warnings, timings, and artifacts before accepting a
+check. Run reviews, version preparation, audits, infrastructure previews, and
+run-group checks directly so their results stay visible, and run interactive
+tools and servers directly too. Never narrow a suite or silence warnings to
+reduce output. For example, capture the browser suites with
+`bun run agent:run --label browser -- bun run test:browser`. Run `bun run check`
+and `bun run verify` directly: they are agent-tool run groups that already
+record each step.
+
 Use the installed ship-pr skill; prepare client versions against the fetched base
 with agent-tool versions prepare. Merge does not deploy the Workers or publish the apps. Deploy only
 when requested, using bun run deploy; bun run deploy:preview changes no remote state.

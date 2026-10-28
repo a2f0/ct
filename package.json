@@ -10,6 +10,7 @@
   "scripts": {
     "agent-tool": "agent-tool",
     "agent:run": "agent-tool run",
+    "agent:logs": "agent-tool logs",
     "agents:sync": "agent-tool skills install --apply",
     "agents:check": "agent-tool skills check",
     "build": "turbo run build",
