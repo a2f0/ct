@@ -17,7 +17,7 @@
     "check": "agent-tool run-group scripts/testing/check.json",
     "typecheck": "turbo run check && tsc -p scripts/tsconfig.json",
     "format": "biome check --write .",
-    "test": "bun test packages scripts",
+    "test": "bun test --parallel packages scripts",
     "test:browser": "playwright test",
     "test:native": "bun scripts/testing/nativeE2e.ts",
     "dev": "turbo run dev",
