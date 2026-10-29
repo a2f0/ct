@@ -4,7 +4,7 @@ import { CLIENT_PROTOCOL } from "../../../scripts/deploy/collectorReady";
 import { admin as handleAdmin } from "../src/admin";
 import type { AdminEnv, Env } from "../src/env";
 import { ingest } from "../src/index";
-import { authenticateTestAccount, TEST_AUTH } from "./authHelpers";
+import { adminEnvFor, authenticateTestAccount } from "./authHelpers";
 import { database } from "./database";
 
 let cookie = "";
@@ -47,13 +47,10 @@ function post(body: unknown, origin = production) {
   );
 }
 async function get(path: string) {
-  return admin(new Request(`https://ct-admin.a2f0.net/api/${path}`), {
-    ...TEST_AUTH,
-    DB: storage.db,
-    SITES: env.SITES,
-    READ_LIMITER: env.INGEST_LIMITER,
-    ASSETS: {} as Fetcher,
-  } satisfies AdminEnv);
+  return admin(
+    new Request(`https://ct-admin.a2f0.net/api/${path}`),
+    adminEnvFor(env),
+  );
 }
 
 test("migration preserves old clients and backfills only the historically known Skyline environment", async () => {

@@ -236,7 +236,9 @@ async function jsonBody(
     const body = await readBody(request, maxBytes);
     if (body && typeof body === "object" && !Array.isArray(body))
       return body as Record<string, unknown>;
-  } catch {}
+  } catch {
+    // Oversized or malformed bodies get the same reply as non-object bodies.
+  }
   return json({ error: "Invalid request" }, 400);
 }
 

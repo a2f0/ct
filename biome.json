@@ -20,12 +20,202 @@
   },
   "linter": {
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        "noImportCycles": {
+          "level": "error",
+          "options": {
+            "ignoreTypes": false
+          }
+        }
+      }
     }
   },
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "packages/client/src/**",
+        "!**/*.test.ts",
+        "!**/*.dom.checks.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@ct/*"],
+                    "message": "The published SDK is self-contained: it must not import another workspace or repository scripts."
+                  },
+                  {
+                    "group": [
+                      "**/admin/src/**",
+                      "**/api/src/**",
+                      "**/app-capacitor/src/**",
+                      "**/extension/src/**",
+                      "**/packages/**",
+                      "**/scripts/**",
+                      "**/tests/**"
+                    ],
+                    "message": "The published SDK is self-contained: it must not import another workspace or repository scripts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/extension/src/**",
+        "!**/*.test.ts",
+        "!**/*.dom.checks.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@ct/*", "@a2f0/ct-client"],
+                    "message": "The browser extension is self-contained: it must not import another workspace or repository scripts."
+                  },
+                  {
+                    "group": [
+                      "**/admin/src/**",
+                      "**/api/src/**",
+                      "**/app-capacitor/src/**",
+                      "**/client/src/**",
+                      "**/packages/**",
+                      "**/scripts/**",
+                      "**/tests/**"
+                    ],
+                    "message": "The browser extension is self-contained: it must not import another workspace or repository scripts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/api/src/**",
+        "!**/*.test.ts",
+        "!**/*.dom.checks.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@ct/*", "@a2f0/ct-client"],
+                    "message": "The Workers own the server side: they must not import the UI, native shell, extension, SDK or scripts."
+                  },
+                  {
+                    "group": [
+                      "**/admin/src/**",
+                      "**/app-capacitor/src/**",
+                      "**/client/src/**",
+                      "**/extension/src/**",
+                      "**/packages/**",
+                      "**/scripts/**",
+                      "**/tests/**"
+                    ],
+                    "message": "The Workers own the server side: they must not import the UI, native shell, extension, SDK or scripts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/admin/src/**",
+        "!**/*.test.ts",
+        "!**/*.dom.checks.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@ct/*", "@a2f0/ct-client"],
+                    "message": "The admin UI reaches the Workers over HTTP only: it must not import Worker, native, extension, SDK or script modules."
+                  },
+                  {
+                    "group": [
+                      "**/api/src/**",
+                      "**/app-capacitor/src/**",
+                      "**/client/src/**",
+                      "**/extension/src/**",
+                      "**/packages/**",
+                      "**/scripts/**",
+                      "**/tests/**"
+                    ],
+                    "message": "The admin UI reaches the Workers over HTTP only: it must not import Worker, native, extension, SDK or script modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/app-capacitor/src/**",
+        "!**/*.test.ts",
+        "!**/*.dom.checks.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@ct/api", "@ct/extension", "@a2f0/ct-client"],
+                    "message": "The native shell uses the admin UI only through @ct/admin's exports and must not import other workspaces' modules."
+                  },
+                  {
+                    "group": [
+                      "**/admin/src/**",
+                      "**/api/src/**",
+                      "**/client/src/**",
+                      "**/extension/src/**",
+                      "**/packages/**",
+                      "**/scripts/**",
+                      "**/tests/**"
+                    ],
+                    "message": "The native shell uses the admin UI only through @ct/admin's exports and must not import other workspaces' modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
