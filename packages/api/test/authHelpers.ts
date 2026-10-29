@@ -1,6 +1,6 @@
 import { provisionAccount } from "../src/accounts";
 import { createAuth } from "../src/auth";
-import type { AdminEnv } from "../src/env";
+import type { AdminEnv, Env } from "../src/env";
 
 export const TEST_AUTH = {
   BETTER_AUTH_URL: "https://ct-admin.a2f0.net",
@@ -32,4 +32,16 @@ export async function authenticateTestAccount(db: D1Database) {
   const cookie = response.headers.get("set-cookie")?.split(";")[0];
   if (!cookie) throw new Error("Fixture session cookie missing");
   return cookie;
+}
+
+// The admin Worker's environment over the same database, sites and limiter as
+// a collector test environment.
+export function adminEnvFor(env: Env, ASSETS = {} as Fetcher): AdminEnv {
+  return {
+    ...TEST_AUTH,
+    DB: env.DB,
+    SITES: env.SITES,
+    READ_LIMITER: env.INGEST_LIMITER,
+    ASSETS,
+  };
 }

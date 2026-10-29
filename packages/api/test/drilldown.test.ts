@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { admin } from "../src/admin";
-import type { AdminEnv, Env } from "../src/env";
+import type { Env } from "../src/env";
 import { ingest } from "../src/index";
-import { authenticateTestAccount, TEST_AUTH } from "./authHelpers";
+import { adminEnvFor, authenticateTestAccount } from "./authHelpers";
 import { database } from "./database";
 
 let storage: Awaited<ReturnType<typeof database>>;
@@ -50,13 +50,7 @@ async function deliver(
 function get(path: string) {
   const request = new Request(`https://ct-admin.a2f0.net/api/${path}`);
   request.headers.set("Cookie", cookie);
-  return admin(request, {
-    ...TEST_AUTH,
-    DB: storage.db,
-    SITES: env.SITES,
-    READ_LIMITER: env.INGEST_LIMITER,
-    ASSETS: {} as Fetcher,
-  } satisfies AdminEnv);
+  return admin(request, adminEnvFor(env));
 }
 
 async function events(query: string) {

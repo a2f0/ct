@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { admin as handleAdmin } from "../src/admin";
 import type { AdminEnv, Env } from "../src/env";
 import worker, { ingest } from "../src/index";
-import { authenticateTestAccount, TEST_AUTH } from "./authHelpers";
+import { adminEnvFor, authenticateTestAccount } from "./authHelpers";
 import { database } from "./database";
 
 let cookie = "";
@@ -38,15 +38,10 @@ function request(body: unknown, requestOrigin = origin) {
     body: JSON.stringify(body),
   });
 }
-function adminEnv(): AdminEnv {
-  return {
-    ...TEST_AUTH,
-    DB: storage.db,
-    SITES: env.SITES,
-    READ_LIMITER: env.INGEST_LIMITER,
-    ASSETS: { fetch: async () => new Response("assets") } as unknown as Fetcher,
-  };
-}
+const adminEnv = () =>
+  adminEnvFor(env, {
+    fetch: async () => new Response("assets"),
+  } as unknown as Fetcher);
 
 test("writes a valid batch atomically and deduplicates retries", async () => {
   const batch = { site: "skyline", events: [event(), event()] };

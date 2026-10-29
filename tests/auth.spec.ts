@@ -104,6 +104,24 @@ async function recordSavedPasswords(
   }, outcome);
   return saved;
 }
+// Changes the account's password from initialPassword to changedPassword on
+// the open Account page.
+async function changePassword(page: Page) {
+  await page
+    .getByLabel("Current password", { exact: true })
+    .fill(initialPassword);
+  await page.getByLabel("New password", { exact: true }).fill(changedPassword);
+  await page
+    .getByLabel("Confirm new password", { exact: true })
+    .fill(changedPassword);
+  await page
+    .getByRole("button", { name: "Change password", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toHaveText(
+    "Password changed. Other sessions have been signed out.",
+  );
+}
+
 async function signIn(page: Page, email: string, password: string) {
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
@@ -407,19 +425,7 @@ test("CLI accounts log in, change passwords, logout, reset and clear expired pri
   await expect(page.locator('input[autocomplete="username"]')).toHaveValue(
     email,
   );
-  await page
-    .getByLabel("Current password", { exact: true })
-    .fill(initialPassword);
-  await page.getByLabel("New password", { exact: true }).fill(changedPassword);
-  await page
-    .getByLabel("Confirm new password", { exact: true })
-    .fill(changedPassword);
-  await page
-    .getByRole("button", { name: "Change password", exact: true })
-    .click();
-  await expect(page.getByRole("status")).toHaveText(
-    "Password changed. Other sessions have been signed out.",
-  );
+  await changePassword(page);
   expect(saved.length).toBe(2);
   expect(saved[1]?.id === email).toBe(true);
   expect(saved[1]?.password === changedPassword).toBe(true);
@@ -474,21 +480,7 @@ for (const outcome of ["missing", "rejected"] as const) {
     );
     await signIn(page, email, initialPassword);
     await page.getByRole("link", { name: "Account", exact: true }).click();
-    await page
-      .getByLabel("Current password", { exact: true })
-      .fill(initialPassword);
-    await page
-      .getByLabel("New password", { exact: true })
-      .fill(changedPassword);
-    await page
-      .getByLabel("Confirm new password", { exact: true })
-      .fill(changedPassword);
-    await page
-      .getByRole("button", { name: "Change password", exact: true })
-      .click();
-    await expect(page.getByRole("status")).toHaveText(
-      "Password changed. Other sessions have been signed out.",
-    );
+    await changePassword(page);
     expect(saved.length).toBe(outcome === "rejected" ? 2 : 0);
     expect(errors).toEqual([]);
   });
