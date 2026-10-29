@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { getMigrations } from "better-auth/db/migration";
 import { provisionAccount } from "../src/accounts";
 import { admin } from "../src/admin";
@@ -6,26 +6,23 @@ import { createAuth } from "../src/auth";
 import type { AdminEnv, Env } from "../src/env";
 import collector from "../src/index";
 import { TEST_ACCOUNT, TEST_AUTH } from "./authHelpers";
-import { database } from "./database";
+import { adminEnv, rateLimit } from "./bindings";
+import { useDatabase } from "./database";
 
-let storage: Awaited<ReturnType<typeof database>>;
+const storage = useDatabase();
 let env: AdminEnv;
 beforeEach(async () => {
-  storage = await database();
-  env = {
-    ...TEST_AUTH,
-    DB: storage.db,
-    SITES: { skyline: { "https://skyline.devopsrockstars.com": "production" } },
-    READ_LIMITER: { limit: async () => ({ success: true }) },
-    ASSETS: {
+  env = adminEnv(
+    storage.db,
+    { skyline: { "https://skyline.devopsrockstars.com": "production" } },
+    {
       fetch: async () =>
         new Response("<html>shell</html>", {
           headers: { "Content-Type": "text/html" },
         }),
     } as unknown as Fetcher,
-  };
+  );
 });
-afterEach(() => storage.sqlite.close());
 function call(
   path: string,
   {
@@ -180,7 +177,7 @@ test("every dashboard response is marked noindex and robots.txt is public", asyn
     ["signed-in page", await call("/", { cookie }), 200],
     ["signed-in data", await call("/api/sites", { cookie }), 200],
   ];
-  env.READ_LIMITER = { limit: async () => ({ success: false }) };
+  env.READ_LIMITER = rateLimit(false);
   responses.push(["rate limit", await call("/api/sites", { cookie }), 429]);
   env.BETTER_AUTH_SECRET = "";
   responses.push(["auth outage", await call("/recent"), 503]);

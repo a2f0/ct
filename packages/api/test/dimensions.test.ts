@@ -1,11 +1,12 @@
 import { Database } from "bun:sqlite";
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { CLIENT_PROTOCOL } from "../../../scripts/deploy/collectorReady";
 import { admin as handleAdmin } from "../src/admin";
 import type { AdminEnv, Env } from "../src/env";
 import { ingest } from "../src/index";
 import { adminEnvFor, authenticateTestAccount } from "./authHelpers";
-import { database } from "./database";
+import { collectorEnv } from "./bindings";
+import { useDatabase } from "./database";
 
 let cookie = "";
 const admin = (request: Request, env: AdminEnv) => {
@@ -13,22 +14,16 @@ const admin = (request: Request, env: AdminEnv) => {
   return handleAdmin(request, env);
 };
 
-let storage: Awaited<ReturnType<typeof database>>;
+const storage = useDatabase();
 let env: Env;
 const production = "https://devopsrockstars.com";
 const staging = "https://staging.devopsrockstars.com";
 beforeEach(async () => {
-  storage = await database();
   cookie = await authenticateTestAccount(storage.db);
-  env = {
-    DB: storage.db,
-    SITES: {
-      devopsrockstars: { [production]: "production", [staging]: "staging" },
-    },
-    INGEST_LIMITER: { limit: async () => ({ success: true }) },
-  };
+  env = collectorEnv(storage.db, {
+    devopsrockstars: { [production]: "production", [staging]: "staging" },
+  });
 });
-afterEach(() => storage.sqlite.close());
 const click = () => ({
   id: crypto.randomUUID(),
   timestamp: Date.now(),

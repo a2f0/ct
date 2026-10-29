@@ -1,24 +1,21 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { provisionAccount } from "../src/accounts";
 import { admin } from "../src/admin";
 import type { AdminEnv } from "../src/env";
 import { TEST_ACCOUNT, TEST_AUTH } from "./authHelpers";
-import { database } from "./database";
+import { adminEnv } from "./bindings";
+import { useDatabase } from "./database";
 
-let storage: Awaited<ReturnType<typeof database>>;
+const storage = useDatabase();
 let env: AdminEnv;
 beforeEach(async () => {
-  storage = await database();
-  env = {
-    ...TEST_AUTH,
-    DB: storage.db,
-    SITES: { skyline: { "https://skyline.devopsrockstars.com": "production" } },
-    READ_LIMITER: { limit: async () => ({ success: true }) },
-    ASSETS: { fetch: async () => new Response("shell") } as unknown as Fetcher,
-  };
+  env = adminEnv(
+    storage.db,
+    { skyline: { "https://skyline.devopsrockstars.com": "production" } },
+    { fetch: async () => new Response("shell") } as unknown as Fetcher,
+  );
   await provisionAccount(env.DB, { action: "create", ...TEST_ACCOUNT });
 });
-afterEach(() => storage.sqlite.close());
 
 // Native HTTP sends no Origin; only the headers given here reach the Worker.
 function call(

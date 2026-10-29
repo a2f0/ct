@@ -1,15 +1,15 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { admin } from "../src/admin";
 import { DAY } from "../src/env";
 import { authenticateTestAccount, TEST_AUTH } from "./authHelpers";
-import { database } from "./database";
+import { adminEnv, rateLimit } from "./bindings";
+import { useDatabase } from "./database";
 
-let storage: Awaited<ReturnType<typeof database>>;
+const storage = useDatabase();
 let cookie = "";
 let limited = false;
 
 beforeEach(async () => {
-  storage = await database();
   cookie = await authenticateTestAccount(storage.db);
   limited = false;
   const locations = storage.sqlite.query(
@@ -39,7 +39,6 @@ beforeEach(async () => {
       location,
     );
 });
-afterEach(() => storage.sqlite.close());
 
 function forget(
   body: unknown,
@@ -56,13 +55,7 @@ function forget(
       headers: { Origin: origin, "Content-Type": type, Cookie: session },
       ...(method === "POST" ? { body: JSON.stringify(body) } : {}),
     }),
-    {
-      ...TEST_AUTH,
-      DB: storage.db,
-      SITES: {},
-      READ_LIMITER: { limit: async () => ({ success: !limited }) },
-      ASSETS: {} as Fetcher,
-    },
+    { ...adminEnv(storage.db, {}), READ_LIMITER: rateLimit(!limited) },
   );
 }
 const ips = () =>
