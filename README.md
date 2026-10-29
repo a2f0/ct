@@ -45,6 +45,13 @@ development only; to sign in locally, run the admin Worker as the
 Sites integrate through @a2f0/ct-client; its [README](packages/client/README.md)
 covers initialization, batching, opt-out, and lifecycle behavior.
 
+Each workspace's `src/` imports no other workspace, with one exception: the app
+shell loads the dashboard through `@ct/admin`'s package exports. The dashboard
+talks to the Workers over HTTP, never by importing them, and the SDK and the
+extension stand alone. Tests and repository scripts may reach across
+workspaces. `biome.json` enforces these boundaries and rejects import cycles,
+including type-only ones, during `bun run check`.
+
 ## Checks
 
 ```sh
