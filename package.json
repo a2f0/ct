@@ -40,7 +40,7 @@
     "mobile:upload:android": "bun run --cwd packages/app-capacitor android:upload-release"
   },
   "devDependencies": {
-    "@a2f0/agent-tool": "0.1.28",
+    "@a2f0/agent-tool": "0.1.30",
     "@biomejs/biome": "2.5.15",
     "@ct/api": "workspace:*",
     "@playwright/test": "1.64.1",
