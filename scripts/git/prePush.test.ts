@@ -23,6 +23,31 @@ test("pre-push checks the pushed commits even when HEAD is different", async () 
       stderr: "pipe",
       env,
     });
+  // Runs the installed hook asynchronously, so independent pushes run together.
+  // Each run's verify step writes its own marker, showing whether it was reached.
+  let runs = 0;
+  const push = async (refs: string) => {
+    const marker = `verified-${++runs}`;
+    const child = Bun.spawn(["sh", hook, "origin"], {
+      cwd: directory,
+      stdin: new TextEncoder().encode(refs),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...env, CT_FIXTURE_MARKER: marker },
+    });
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+    const verified = Bun.file(resolve(directory, marker));
+    return {
+      exitCode,
+      output: stdout + stderr,
+      verified: (await verified.exists()) ? await verified.text() : null,
+    };
+  };
+  const hook = resolve(directory, ".git/hooks/pre-push");
   const git = (...args: string[]) => {
     const result = command(["git", ...args]);
     if (result.exitCode !== 0) throw new Error(result.stderr.toString());
@@ -69,68 +94,56 @@ test("pre-push checks the pushed commits even when HEAD is different", async () 
       JSON.stringify({
         scripts: {
           "agent-tool": JSON.stringify(cli),
-          verify: 'bun -e \'await Bun.write("verified", "yes")\'',
+          verify:
+            "bun -e 'await Bun.write(process.env.CT_FIXTURE_MARKER, \"yes\")'",
         },
       }),
     );
     git("add", ".");
     expect(command([cli, "hooks", "install", "--apply"]).exitCode).toBe(0);
-    const hook = resolve(directory, ".git/hooks/pre-push");
-    for (const destination of [zero, base]) {
-      const rejected = command(
-        ["sh", hook, "origin"],
-        `refs/heads/feat/forbidden ${forbidden} refs/heads/feat/forbidden ${destination}\n`,
-      );
-      expect(rejected.exitCode).not.toBe(0);
-      expect(rejected.stdout.toString() + rejected.stderr.toString()).toContain(
-        "Co-authored-by",
-      );
-      expect(await Bun.file(resolve(directory, "verified")).exists()).toBe(
-        false,
-      );
+    const [newBranch, existingBranch, multiple, accepted] = await Promise.all([
+      ...[zero, base].map((destination) =>
+        push(
+          `refs/heads/feat/forbidden ${forbidden} refs/heads/feat/forbidden ${destination}\n`,
+        ),
+      ),
+      push(
+        `refs/heads/main ${head} refs/heads/feat/valid ${zero}\n` +
+          `refs/heads/feat/forbidden ${forbidden} refs/heads/feat/forbidden ${zero}\n`,
+      ),
+      push(`refs/heads/main ${head} refs/heads/feat/valid ${zero}\n`),
+    ]);
+    for (const rejected of [newBranch, existingBranch, multiple]) {
+      expect(rejected?.exitCode).not.toBe(0);
+      expect(rejected?.output).toContain("Co-authored-by");
+      expect(rejected?.verified).toBeNull();
     }
-    const multiple = command(
-      ["sh", hook, "origin"],
-      `refs/heads/main ${head} refs/heads/feat/valid ${zero}\n` +
-        `refs/heads/feat/forbidden ${forbidden} refs/heads/feat/forbidden ${zero}\n`,
-    );
-    expect(multiple.exitCode).not.toBe(0);
-    expect(multiple.stdout.toString() + multiple.stderr.toString()).toContain(
-      "Co-authored-by",
-    );
-    await rm(resolve(directory, "verified"), { force: true });
-    const accepted = command(
-      ["sh", hook, "origin"],
-      `refs/heads/main ${head} refs/heads/feat/valid ${zero}\n`,
-    );
-    expect(accepted.exitCode).toBe(0);
-    expect(await Bun.file(resolve(directory, "verified")).text()).toBe("yes");
+    expect(accepted?.exitCode, accepted?.output).toBe(0);
+    expect(accepted?.verified).toBe("yes");
     git("commit", "-m", "chore: install fixture tooling");
     const previous = git("rev-parse", "HEAD");
     git("update-ref", "refs/remotes/origin/feat/valid", previous);
     git("update-ref", "refs/remotes/origin/main", forbidden);
     git("merge", "--no-ff", forbidden, "-m", "chore: integrate updated main");
     const integrated = git("rev-parse", "HEAD");
-    const mergedBase = command(
-      ["sh", hook, "origin"],
-      `refs/heads/main ${integrated} refs/heads/feat/valid ${previous}\n`,
-    );
-    expect(mergedBase.exitCode, mergedBase.stderr.toString()).toBe(0);
     git(
       "commit",
       "--allow-empty",
       "-m",
       "feat: new attribution\n\nCo-authored-by: Fixture <fixture@example.invalid>",
     );
-    const rejectedAfterMerge = command(
-      ["sh", hook, "origin"],
-      `refs/heads/main ${git("rev-parse", "HEAD")} refs/heads/feat/valid ${previous}\n`,
-    );
+    // Both pushes read the same remote refs; the new commit does not change
+    // what `integrated` reaches.
+    const [mergedBase, rejectedAfterMerge] = await Promise.all([
+      push(`refs/heads/main ${integrated} refs/heads/feat/valid ${previous}\n`),
+      push(
+        `refs/heads/main ${git("rev-parse", "HEAD")} refs/heads/feat/valid ${previous}\n`,
+      ),
+    ]);
+    expect(mergedBase.exitCode, mergedBase.output).toBe(0);
+    expect(mergedBase.verified).toBe("yes");
     expect(rejectedAfterMerge.exitCode).not.toBe(0);
-    expect(
-      rejectedAfterMerge.stdout.toString() +
-        rejectedAfterMerge.stderr.toString(),
-    ).toContain("Co-authored-by");
+    expect(rejectedAfterMerge.output).toContain("Co-authored-by");
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
