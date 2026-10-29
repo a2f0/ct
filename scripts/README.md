@@ -19,7 +19,8 @@ setting with `git config --local --unset core.hooksPath`, then run
 `bun run hooks:install`. Inspect other custom hook paths before changing them;
 use `--adopt` only after reviewing unmanaged hook replacements.
 
-`bun run check` records lint, typechecking, RuboCop, and managed skills. `bun run verify`
+`bun run check` records lint, typechecking, RuboCop, managed skills, and harness
+permission rules. `bun run verify`
 adds unit tests, builds, and packed SDK smoke tests; the pre-push hook also checks
 actual destination branches and signed, unattributed commits. Browser and
 extension validation remain separate documented CI steps. Registry decisions
