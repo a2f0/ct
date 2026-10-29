@@ -1,5 +1,5 @@
 import { StringDecoder } from "node:string_decoder";
-import { provisionAccount } from "../../packages/api/src/accounts.ts";
+import { provisionAccount } from "@ct/api/accounts";
 import { withAccountDatabase } from "./accountDatabase.ts";
 
 export function parseAccountArgs(args: string[]) {

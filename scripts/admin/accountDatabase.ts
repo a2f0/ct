@@ -1,8 +1,8 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import type { AccountDatabase } from "@ct/api/accounts";
 import type { PlatformProxy } from "wrangler";
-import type { AccountDatabase } from "../../packages/api/src/accounts";
 
 /** Wrangler owns OAuth credentials; this never reads or exposes their values. */
 export async function withAccountDatabase<T>(

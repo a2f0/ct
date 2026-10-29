@@ -38,11 +38,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "packages/client/src/**",
-        "!**/*.test.ts",
-        "!**/*.test.tsx"
-      ],
+      "includes": ["packages/client/src/**", "!**/*.test.ts", "!**/*.test.tsx"],
       "linter": {
         "rules": {
           "style": {
@@ -110,11 +106,7 @@
       }
     },
     {
-      "includes": [
-        "packages/api/src/**",
-        "!**/*.test.ts",
-        "!**/*.test.tsx"
-      ],
+      "includes": ["packages/api/src/**", "!**/*.test.ts", "!**/*.test.tsx"],
       "linter": {
         "rules": {
           "style": {
@@ -146,11 +138,7 @@
       }
     },
     {
-      "includes": [
-        "packages/admin/src/**",
-        "!**/*.test.ts",
-        "!**/*.test.tsx"
-      ],
+      "includes": ["packages/admin/src/**", "!**/*.test.ts", "!**/*.test.tsx"],
       "linter": {
         "rules": {
           "style": {
@@ -209,6 +197,26 @@
                       "**/tests/**"
                     ],
                     "message": "The native shell uses the admin UI only through @ct/admin's exports and must not import other workspaces' modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["scripts/**", "!**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["**/packages/**", "@ct/*/src/**"],
+                    "message": "Scripts use a workspace's package exports, such as @ct/api/accounts, not its source paths."
                   }
                 ]
               }
