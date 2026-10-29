@@ -31,7 +31,7 @@ check. Run reviews, version preparation, audits, infrastructure previews, and
 run-group checks directly so their results stay visible, and run interactive
 tools and servers directly too. Never narrow a suite or silence warnings to
 reduce output. For example, capture the unit tests with
-`bun run agent-tool bun test --log -- packages scripts` and the browser suites
+`bun run agent-tool bun test --log -- --parallel packages scripts` and the browser suites
 with `bun run agent:run --label browser -- bun run test:browser`. Run `bun run check`
 and `bun run verify` directly: they are agent-tool run groups that already
 record each step.
