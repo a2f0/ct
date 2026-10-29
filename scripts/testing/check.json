@@ -21,7 +21,7 @@
       "command": ["bun", "run", "lint:rubocop"]
     },
     {
-      "label": "skills",
+      "label": "agents",
       "command": ["bun", "run", "agents:check"]
     }
   ]

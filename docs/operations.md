@@ -222,6 +222,6 @@ Ruby is pinned in .ruby-version and .mise.toml for the app's Fastlane bundle;
 after changing Capacitor packages, commit the refreshed Swift Package.resolved,
 and expect CI to fail if `bun run mobile:sync` changes a tracked native file. Use
 the installed update-dependencies skill for upgrades. Validate Worker dry-runs,
-the package tarball and both browser suites. Update agent-tool skills only with
-agents:sync; do not edit managed files. Image generation uses agent-tool's declared
+the package tarball and both browser suites. Update agent-tool skills and
+permission rules only with agents:sync; do not edit managed files. Image generation uses agent-tool's declared
 brand outputs. No production deployment is triggered automatically by a merge.

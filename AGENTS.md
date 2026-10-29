@@ -15,11 +15,13 @@ sign Conventional Commits, preserve unrelated work, and never force-push or add
 attribution footers.
 
 Validate with bun run check, bun run test, bun run build, bun run package:smoke,
-and bun run test:browser. CI's verify job gates merges, including skill drift.
+and bun run test:browser. CI's verify job gates merges, including skill and
+permission drift.
 
-Run finite, noisy commands, such as installs, builds, tests, linters, and Git
-commands that run hooks, through
-`bun run agent:run --label <name> -- <command> [args...]`. It keeps complete
+Run Bun tests through `bun run agent-tool bun test --log [-- args...]`, and
+other finite, noisy commands, such as installs, builds, linters, package
+scripts, and Git commands that run hooks, through
+`bun run agent:run --label <name> -- <command> [args...]`. Each keeps complete
 output in a private log, preserves the exit status, and prints a compact
 receipt, with a bounded excerpt of the log on failure. Read more with
 `bun run agent:logs <log-path>`, raising `--tail-lines` or `--max-bytes` as
@@ -28,8 +30,9 @@ warnings: inspect required warnings, timings, and artifacts before accepting a
 check. Run reviews, version preparation, audits, infrastructure previews, and
 run-group checks directly so their results stay visible, and run interactive
 tools and servers directly too. Never narrow a suite or silence warnings to
-reduce output. For example, capture the browser suites with
-`bun run agent:run --label browser -- bun run test:browser`. Run `bun run check`
+reduce output. For example, capture the unit tests with
+`bun run agent-tool bun test --log -- packages scripts` and the browser suites
+with `bun run agent:run --label browser -- bun run test:browser`. Run `bun run check`
 and `bun run verify` directly: they are agent-tool run groups that already
 record each step.
 
@@ -58,9 +61,12 @@ Use .secrets only as a gitignored link to the matrix-secrets/ct namespace if one
 is configured. Never read, print, log, or commit secret values. Wrangler's existing
 OAuth session is sufficient for local deployment. Never copy another project's keys.
 
-Managed skills in .agents/skills and .claude/skills come from the exact agent-tool
-pin. Do not edit them; run bun run agents:sync after changing the pin and commit
-the lockfile, skills and .agent-tool-skills.json together. skills/ holds the
+Managed skills in .agents/skills and .claude/skills and the harness permission
+rules in .claude/settings.json and .codex/rules/agent-tool.rules come from the
+exact agent-tool pin. Do not edit them; run bun run agents:sync after changing
+the pin or the permissions.executables classes in agent-tool.json, and commit
+the lockfile, skills, rules, .agent-tool-skills.json and
+.agent-tool-permissions.json together. skills/ holds the
 repository-owned app-store-readiness skill, kept byte-identical with balebase and
 nc as docs/readiness.md describes. Brand sources live in
 assets/brand and image outputs are declared in agent-tool.json.
