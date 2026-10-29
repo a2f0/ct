@@ -48,7 +48,11 @@ const authClient = {
   },
   changePassword: async () => result,
 };
-mock.module("./authClient", () => ({ authClient, returnTo: () => "/" }));
+// Bun keeps module mocks for the rest of a serial `bun test` process, so
+// replace only the network client: authClient.test.ts still gets the real
+// returnTo when it runs after this file.
+const actual = await import("./authClient");
+mock.module("./authClient", () => ({ ...actual, authClient }));
 let result: { error: { status: number } | null };
 const restores: Array<() => void> = [];
 const email = "fixture@example.test";
