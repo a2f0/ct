@@ -1,11 +1,12 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { admin } from "../src/admin";
 import type { Env } from "../src/env";
 import { ingest } from "../src/index";
 import { adminEnvFor, authenticateTestAccount } from "./authHelpers";
-import { database } from "./database";
+import { collectorEnv } from "./bindings";
+import { useDatabase } from "./database";
 
-let storage: Awaited<ReturnType<typeof database>>;
+const storage = useDatabase();
 let env: Env;
 let cookie = "";
 const origin = "https://skyline.devopsrockstars.com";
@@ -19,15 +20,9 @@ const click = (page = "/", target = "button", label: string | null = null) => ({
 });
 
 beforeEach(async () => {
-  storage = await database();
   cookie = await authenticateTestAccount(storage.db);
-  env = {
-    DB: storage.db,
-    SITES: { skyline: { [origin]: "production" } },
-    INGEST_LIMITER: { limit: async () => ({ success: true }) },
-  };
+  env = collectorEnv(storage.db, { skyline: { [origin]: "production" } });
 });
-afterEach(() => storage.sqlite.close());
 
 async function deliver(
   events: ReturnType<typeof click>[],

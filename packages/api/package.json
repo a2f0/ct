@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
+  "exports": {
+    "./accounts": "./src/accounts.ts"
+  },
   "scripts": {
     "check": "tsc --noEmit && tsc -p tsconfig.test.json",
     "build": "wrangler deploy --dry-run --outdir dist",

@@ -1,12 +1,13 @@
 import { Database } from "bun:sqlite";
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import type { Env } from "../src/env";
 import worker, { ingest } from "../src/index";
 import { normalizeIp, requestLocation } from "../src/location";
 import { recent, summary } from "../src/queries";
-import { database } from "./database";
+import { collectorEnv } from "./bindings";
+import { useDatabase } from "./database";
 
-let storage: Awaited<ReturnType<typeof database>>;
+const storage = useDatabase();
 let env: Env;
 const origin = "https://skyline.devopsrockstars.com";
 const texas = {
@@ -50,17 +51,11 @@ function request(
 }
 
 beforeEach(async () => {
-  storage = await database();
-  env = {
-    DB: storage.db,
-    SITES: {
-      skyline: { [origin]: "production" },
-      other: { [origin]: "production" },
-    },
-    INGEST_LIMITER: { limit: async () => ({ success: true }) },
-  };
+  env = collectorEnv(storage.db, {
+    skyline: { [origin]: "production" },
+    other: { [origin]: "production" },
+  });
 });
-afterEach(() => storage.sqlite.close());
 
 test("IP migration preserves historical rows and enforces location references", async () => {
   const old = new Database(":memory:");

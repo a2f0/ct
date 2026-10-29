@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { admin as handleAdmin } from "../src/admin";
 import type { AdminEnv, Env } from "../src/env";
 import worker, { ingest } from "../src/index";
 import { adminEnvFor, authenticateTestAccount } from "./authHelpers";
-import { database } from "./database";
+import { collectorEnv, rateLimit } from "./bindings";
+import { useDatabase } from "./database";
 
 let cookie = "";
 const admin = (request: Request, env: AdminEnv) => {
@@ -11,19 +12,13 @@ const admin = (request: Request, env: AdminEnv) => {
   return handleAdmin(request, env);
 };
 
-let storage: Awaited<ReturnType<typeof database>>;
+const storage = useDatabase();
 let env: Env;
 const origin = "https://skyline.devopsrockstars.com";
 beforeEach(async () => {
-  storage = await database();
   cookie = await authenticateTestAccount(storage.db);
-  env = {
-    DB: storage.db,
-    SITES: { skyline: { [origin]: "production" } },
-    INGEST_LIMITER: { limit: async () => ({ success: true }) },
-  };
+  env = collectorEnv(storage.db, { skyline: { [origin]: "production" } });
 });
-afterEach(() => storage.sqlite.close());
 const event = () => ({
   id: crypto.randomUUID(),
   timestamp: Date.now(),
@@ -186,14 +181,14 @@ test("collector health and unknown paths are marked noindex", async () => {
 });
 
 test("storage failure is retriable; rate limits prevent writes", async () => {
-  env.INGEST_LIMITER = { limit: async () => ({ success: false }) };
+  env.INGEST_LIMITER = rateLimit(false);
   const limited = await ingest(
     request({ site: "skyline", events: [event()] }),
     env,
   );
   expect(limited.status).toBe(429);
   expect(limited.headers.get("Retry-After")).toBe("60");
-  env.INGEST_LIMITER = { limit: async () => ({ success: true }) };
+  env.INGEST_LIMITER = rateLimit();
   env.DB.batch = async () => {
     throw new Error("offline");
   };

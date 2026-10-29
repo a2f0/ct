@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+import { afterEach, beforeEach } from "bun:test";
 
 /** Run production SQL against SQLite, including D1 batch transaction semantics. */
 export async function database() {
@@ -60,4 +61,20 @@ export async function database() {
     },
   } as unknown as D1Database;
   return { db, sqlite };
+}
+
+export type TestDatabase = Awaited<ReturnType<typeof database>>;
+
+/**
+ * A fresh migrated database for every test in the calling file, closed after
+ * each one. The returned object is updated in place, so read its fields inside
+ * hooks and tests; hooks the file registers afterwards already see the new one.
+ */
+export function useDatabase(): TestDatabase {
+  const current = {} as TestDatabase;
+  beforeEach(async () => {
+    Object.assign(current, await database());
+  });
+  afterEach(() => current.sqlite.close());
+  return current;
 }
