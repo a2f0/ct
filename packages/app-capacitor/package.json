@@ -32,15 +32,15 @@
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",
-    "@capacitor/core": "8.5.3",
+    "@capacitor/core": "8.6.0",
     "@capacitor/text-zoom": "8.0.1",
     "@ct/admin": "workspace:*"
   },
   "devDependencies": {
-    "@capacitor/android": "8.5.3",
-    "@capacitor/cli": "8.5.3",
-    "@capacitor/ios": "8.5.3",
-    "@vitejs/plugin-react": "6.1.2",
-    "vite": "8.3.4"
+    "@capacitor/android": "8.6.0",
+    "@capacitor/cli": "8.6.0",
+    "@capacitor/ios": "8.6.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "vite": "8.3.5"
   }
 }

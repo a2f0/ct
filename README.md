@@ -34,12 +34,12 @@ development only; to sign in locally, run the admin Worker as the
 
 ## Workspaces
 
-| Package | Purpose |
-| --- | --- |
-| [packages/client](packages/client/README.md) | Published @a2f0/ct-client; framework-free browser SDK |
-| [packages/api](packages/api/README.md) | Ingestion and admin Workers, indexed D1 schema, retention |
-| [packages/admin](packages/admin/README.md) | React/Vite dashboard and its accounts |
-| [packages/extension](packages/extension/README.md) | One extension source, Chrome and Firefox builds, installation in each browser/profile |
+| Package                                                    | Purpose                                                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [packages/client](packages/client/README.md)               | Published @a2f0/ct-client; framework-free browser SDK                                      |
+| [packages/api](packages/api/README.md)                     | Ingestion and admin Workers, indexed D1 schema, retention                                  |
+| [packages/admin](packages/admin/README.md)                 | React/Vite dashboard and its accounts                                                      |
+| [packages/extension](packages/extension/README.md)         | One extension source, Chrome and Firefox builds, installation in each browser/profile      |
 | [packages/app-capacitor](packages/app-capacitor/README.md) | CT app for iOS and Android: the dashboard in a Capacitor shell, with its Fastlane releases |
 
 Sites integrate through @a2f0/ct-client; its [README](packages/client/README.md)

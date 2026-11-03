@@ -4,12 +4,12 @@ Run supported commands through the root package scripts so callers do not depend
 on internal file locations. Application source and package build entrypoints stay
 inside their workspaces.
 
-| Directory | Purpose | Entrypoint |
-| --- | --- | --- |
-| `admin/` | Account provisioning and its D1 adapter | `bun run admin:user -- <arguments>` |
-| `deploy/` | Worker deployment, site registry validation, live release readiness | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
-| `testing/` | Browser fixture preparation, packed SDK smoke tests, native app runs | `bun run test:browser`, `bun run package:smoke`, `bun run test:native` |
-| `git/hooks/` | Commit-message and pre-push gates | `bun run hooks:install` |
+| Directory    | Purpose                                                              | Entrypoint                                                                           |
+| ------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `admin/`     | Account provisioning and its D1 adapter                              | `bun run admin:user -- <arguments>`                                                  |
+| `deploy/`    | Worker deployment, site registry validation, live release readiness  | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
+| `testing/`   | Browser fixture preparation, packed SDK smoke tests, native app runs | `bun run test:browser`, `bun run package:smoke`, `bun run test:native`               |
+| `git/hooks/` | Commit-message and pre-push gates                                    | `bun run hooks:install`                                                              |
 
 After pulling hook-source changes, reinstall the hooks. The shared installer
 copies tracked `scripts/git/hooks/` sources
@@ -26,6 +26,12 @@ actual destination branches and signed, unattributed commits. Browser and
 extension validation remain separate documented CI steps. Registry decisions
 use `bun run release:plan`; the [npm operations guide](../docs/operations.md#npm)
 owns version eligibility, collector readiness, and trusted-publishing gates.
+
+For a TypeScript upgrade, `bun run package:smoke /path/to/older/typescript/bin/tsc`
+also checks the packed declarations with that installed compiler. Supply multiple
+compiler paths to check multiple supported lines. The normal build compiler and
+both Bundler and NodeNext resolution always run; any compiler failure fails the
+smoke test. The command does not download compilers or change dependency pins.
 
 Tests for a script live beside it, or beside its hook directory, and run with
 `bun run test`. The scripts

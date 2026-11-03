@@ -8,13 +8,13 @@ or staging origin; keep that call out of shared components and tests.
 Install with `bun add @a2f0/ct-client` or `npm install @a2f0/ct-client`.
 
 ```ts
-import { createTracker } from '@a2f0/ct-client';
+import { createTracker } from "@a2f0/ct-client";
 const tracker = createTracker({
-  site: 'a2f0-net',
-  app: 'desktop',
-  environment: 'production',
-  capture: 'all',
-  page: () => '/skyline-3d',
+  site: "a2f0-net",
+  app: "desktop",
+  environment: "production",
+  capture: "all",
+  page: () => "/skyline-3d",
 });
 tracker.init();
 await tracker.flush();
@@ -30,19 +30,19 @@ Validate configuration before initializing the tracker.
 
 ## Options
 
-| Option | Default | Behavior |
-| --- | --- | --- |
-| site | Required | Public site identifier, lowercase letters/numbers/hyphens |
-| app | null | Default app slug, lowercase letters/numbers/hyphens, 1–64 characters |
-| environment | Inferred by server | production or staging; must match registered site and exact origin |
-| page | () => '/' | Stable route template without record IDs or tokens, maximum 200 characters |
-| capture | interactive | all elements, interactive controls, or marked elements |
-| batchSize | 20 | 1–50 clicks per request |
-| flushIntervalMs | 5000 | 100–60000 milliseconds |
-| maxQueueSize | 500 | Bounded between batch size and 1000 |
-| enabled | true | false makes init inert |
-| overrideGpc | false | Only true ignores Global Privacy Control; other opt-outs still apply |
-| endpoint | CT endpoint | HTTPS, or HTTP on localhost for development |
+| Option          | Default            | Behavior                                                                   |
+| --------------- | ------------------ | -------------------------------------------------------------------------- |
+| site            | Required           | Public site identifier, lowercase letters/numbers/hyphens                  |
+| app             | null               | Default app slug, lowercase letters/numbers/hyphens, 1–64 characters       |
+| environment     | Inferred by server | production or staging; must match registered site and exact origin         |
+| page            | () => '/'          | Stable route template without record IDs or tokens, maximum 200 characters |
+| capture         | interactive        | all elements, interactive controls, or marked elements                     |
+| batchSize       | 20                 | 1–50 clicks per request                                                    |
+| flushIntervalMs | 5000               | 100–60000 milliseconds                                                     |
+| maxQueueSize    | 500                | Bounded between batch size and 1000                                        |
+| enabled         | true               | false makes init inert                                                     |
+| overrideGpc     | false              | Only true ignores Global Privacy Control; other opt-outs still apply       |
+| endpoint        | CT endpoint        | HTTPS, or HTTP on localhost for development                                |
 
 capture values are 'all', 'interactive', and 'marked'. Assign a stable label with
 data-ct="open-building". Never put user content in this attribute. Use

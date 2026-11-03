@@ -11,9 +11,9 @@ let package = Package(
             targets: ["CapApp-SPM"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.5.3"),
-        .package(name: "CapacitorApp", path: "../../../../../node_modules/.bun/@capacitor+app@8.1.2+9cf34ba37901b220/node_modules/@capacitor/app"),
-        .package(name: "CapacitorTextZoom", path: "../../../../../node_modules/.bun/@capacitor+text-zoom@8.0.1+9cf34ba37901b220/node_modules/@capacitor/text-zoom")
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.6.0"),
+        .package(name: "CapacitorApp", path: "../../../../../node_modules/.bun/@capacitor+app@8.1.2+6ab6186627aac117/node_modules/@capacitor/app"),
+        .package(name: "CapacitorTextZoom", path: "../../../../../node_modules/.bun/@capacitor+text-zoom@8.0.1+6ab6186627aac117/node_modules/@capacitor/text-zoom")
     ],
     targets: [
         .target(
