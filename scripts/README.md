@@ -4,12 +4,12 @@ Run supported commands through the root package scripts so callers do not depend
 on internal file locations. Application source and package build entrypoints stay
 inside their workspaces.
 
-| Directory | Purpose | Entrypoint |
-| --- | --- | --- |
-| `admin/` | Account provisioning and its D1 adapter | `bun run admin:user -- <arguments>` |
-| `deploy/` | Worker deployment, site registry validation, live release readiness | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
-| `testing/` | Browser fixture preparation, packed SDK smoke tests, native app runs | `bun run test:browser`, `bun run package:smoke`, `bun run test:native` |
-| `git/hooks/` | Commit-message and pre-push gates | `bun run hooks:install` |
+| Directory    | Purpose                                                              | Entrypoint                                                                           |
+| ------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `admin/`     | Account provisioning and its D1 adapter                              | `bun run admin:user -- <arguments>`                                                  |
+| `deploy/`    | Worker deployment, site registry validation, live release readiness  | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
+| `testing/`   | Browser fixture preparation, packed SDK smoke tests, native app runs | `bun run test:browser`, `bun run package:smoke`, `bun run test:native`               |
+| `git/hooks/` | Commit-message and pre-push gates                                    | `bun run hooks:install`                                                              |
 
 After pulling hook-source changes, reinstall the hooks. The shared installer
 copies tracked `scripts/git/hooks/` sources

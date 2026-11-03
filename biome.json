@@ -1,11 +1,12 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
   "files": {
     "ignoreUnknown": true,
     "includes": [
       "**",
       "!!.agents",
       "!!.claude",
+      "!!skills/app-store-readiness",
       "!!**/dist",
       "!!**/node_modules",
       "!!**/.wrangler",

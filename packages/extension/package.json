@@ -10,7 +10,7 @@
     "lint:package": "web-ext lint --source-dir dist/firefox --warnings-as-errors"
   },
   "devDependencies": {
-    "@types/chrome": "0.3.6",
+    "@types/chrome": "0.3.7",
     "web-ext": "10.8.0"
   }
 }

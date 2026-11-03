@@ -111,19 +111,19 @@ declares the single `production` tier; `NATIVE_RELEASE_TIER` defaults to it and
 any other value fails before a lane runs. Their tests are in `fastlane/test/`
 and run with `bun run test`; `bun run check` runs RuboCop.
 
-| Lane | Does | Options |
-| --- | --- | --- |
-| `ios build_release` | Signed App Store IPA, without uploading | `build_number:` |
-| `ios upload_release` | `build_release`, then uploads to TestFlight | `build_number:`, `changelog:`, `distribute_external:`, `groups:` |
-| `ios profiles` | Creates or renews the match App Store profile | `force:true` regenerates it |
-| `ios fetch_profiles` | Installs the match App Store profile read-only | |
-| `android build_release` | Signed release App Bundle, without uploading | `build_number:` |
-| `android upload_release` | `build_release`, then uploads to a Google Play track | `build_number:`, `track:` (`internal`), `release_status:` (`completed`), `validate_only:` |
-| `ios readiness`, `android readiness` | Inspects a candidate and its store state, read-only | See [readiness lanes](../../docs/readiness.md) |
-| `store_build_numbers` | Prints the latest build numbers in both stores | `track:` |
-| `android build_debug_apk`, `android build_release_apk` | Builds an APK for sideloading | |
-| `android install_debug`, `android install_release`, `android sideload` | Builds and installs an APK on a connected device | `build_type:release` (`sideload`) |
-| `android test`, `android clean` | Runs the Gradle unit tests; removes Gradle build outputs | |
+| Lane                                                                   | Does                                                     | Options                                                                                   |
+| ---------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `ios build_release`                                                    | Signed App Store IPA, without uploading                  | `build_number:`                                                                           |
+| `ios upload_release`                                                   | `build_release`, then uploads to TestFlight              | `build_number:`, `changelog:`, `distribute_external:`, `groups:`                          |
+| `ios profiles`                                                         | Creates or renews the match App Store profile            | `force:true` regenerates it                                                               |
+| `ios fetch_profiles`                                                   | Installs the match App Store profile read-only           |                                                                                           |
+| `android build_release`                                                | Signed release App Bundle, without uploading             | `build_number:`                                                                           |
+| `android upload_release`                                               | `build_release`, then uploads to a Google Play track     | `build_number:`, `track:` (`internal`), `release_status:` (`completed`), `validate_only:` |
+| `ios readiness`, `android readiness`                                   | Inspects a candidate and its store state, read-only      | See [readiness lanes](../../docs/readiness.md)                                            |
+| `store_build_numbers`                                                  | Prints the latest build numbers in both stores           | `track:`                                                                                  |
+| `android build_debug_apk`, `android build_release_apk`                 | Builds an APK for sideloading                            |                                                                                           |
+| `android install_debug`, `android install_release`, `android sideload` | Builds and installs an APK on a connected device         | `build_type:release` (`sideload`)                                                         |
+| `android test`, `android clean`                                        | Runs the Gradle unit tests; removes Gradle build outputs |                                                                                           |
 
 Every lane but `android test` and `android clean` has a package script named
 `<platform>:<lane in kebab case>` (`store:build-numbers` for
@@ -148,13 +148,13 @@ from the same folder. The lanes load `shared.env` and then `app.env`, import
 only the store names below, and never override a variable already in the
 environment.
 
-| File | Contents |
-| --- | --- |
-| `shared.env` | `TEAM_ID`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `MATCH_GIT_URL`, `MATCH_GIT_BASIC_AUTHORIZATION`, `MATCH_PASSWORD` |
-| `app.env` | `ANDROID_KEYSTORE_STORE_PASS` and `ANDROID_KEYSTORE_KEY_PASS` for the upload key |
-| `AuthKey_<APP_STORE_CONNECT_KEY_ID>.p8` | App Store Connect API key |
-| `google-play-service-account-admin.json` | Google Play publishing service account |
-| `ct-upload.keystore` | Android upload key (alias `upload`), registered with the Play app |
+| File                                     | Contents                                                                                                                                 |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared.env`                             | `TEAM_ID`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `MATCH_GIT_URL`, `MATCH_GIT_BASIC_AUTHORIZATION`, `MATCH_PASSWORD` |
+| `app.env`                                | `ANDROID_KEYSTORE_STORE_PASS` and `ANDROID_KEYSTORE_KEY_PASS` for the upload key                                                         |
+| `AuthKey_<APP_STORE_CONNECT_KEY_ID>.p8`  | App Store Connect API key                                                                                                                |
+| `google-play-service-account-admin.json` | Google Play publishing service account                                                                                                   |
+| `ct-upload.keystore`                     | Android upload key (alias `upload`), registered with the Play app                                                                        |
 
 ### Build numbers
 
