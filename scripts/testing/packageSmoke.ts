@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import { checkDeclarations } from "./packageSmokeCompilers";
 
 const root = resolve(import.meta.dir, "../..");
 const scratch = await mkdtemp(resolve(tmpdir(), "ct-package-"));
@@ -39,30 +40,12 @@ try {
     resolve(scratch, "consumer.mts"),
     'import { createTracker, type Tracker } from "@a2f0/ct-client"; const ct: Tracker = createTracker({site:"smoke", capture:"all", page:()=>"/", overrideGpc:true}); ct.init(); void ct.flush(); ct.setOptOut(true); ct.destroy();\n// @ts-expect-error site must remain typed as string\ncreateTracker({site:123});\n// @ts-expect-error overrideGpc accepts only booleans\ncreateTracker({site:"smoke", overrideGpc:"true"});\n',
   );
-  for (const [module, resolution] of [
-    ["ESNext", "Bundler"],
-    ["NodeNext", "NodeNext"],
-  ]) {
-    const types = Bun.spawnSync(
-      [
-        resolve(root, "node_modules/.bin/tsc"),
-        "--noEmit",
-        "--strict",
-        "--target",
-        "ES2022",
-        "--module",
-        module ?? "ESNext",
-        "--moduleResolution",
-        resolution ?? "Bundler",
-        resolve(scratch, "consumer.mts"),
-      ],
-      { cwd: scratch, stdout: "inherit", stderr: "inherit" },
-    );
-    if (types.exitCode !== 0)
-      throw new Error(
-        `Published declarations cannot be consumed with ${resolution}`,
-      );
-  }
+  checkDeclarations(
+    resolve(root, "node_modules/.bin/tsc"),
+    process.argv.slice(2).map((compiler) => resolve(compiler)),
+    resolve(scratch, "consumer.mts"),
+    scratch,
+  );
   console.log(
     `Package smoke passed: ${tarball}; SSR import, browser bundle, and standalone TypeScript consumer.`,
   );

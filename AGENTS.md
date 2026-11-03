@@ -1,7 +1,7 @@
 # Repository guidance
 
-Read README.md, the README of each package you change, scripts/README.md, and
-docs/operations.md and docs/dependency-upgrades.md. All workspaces live in packages/: client
+Read README.md, the README of each package you change, scripts/README.md,
+docs/operations.md, and docs/dependency-upgrades.md. All workspaces live in packages/: client
 is the publishable browser SDK, api owns the two Workers and D1 schema, admin
 is the React UI, app-capacitor ships it as the iOS and Android app, and
 extension produces Chrome and Firefox packages.

@@ -27,6 +27,12 @@ extension validation remain separate documented CI steps. Registry decisions
 use `bun run release:plan`; the [npm operations guide](../docs/operations.md#npm)
 owns version eligibility, collector readiness, and trusted-publishing gates.
 
+For a TypeScript upgrade, `bun run package:smoke /path/to/older/typescript/bin/tsc`
+also checks the packed declarations with that installed compiler. Supply multiple
+compiler paths to check multiple supported lines. The normal build compiler and
+both Bundler and NodeNext resolution always run; any compiler failure fails the
+smoke test. The command does not download compilers or change dependency pins.
+
 Tests for a script live beside it, or beside its hook directory, and run with
 `bun run test`. The scripts
 TypeScript project includes these directories recursively. Keep relative root

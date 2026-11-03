@@ -12,7 +12,11 @@ Bun update refreshes permitted lock resolutions without adding blanket overrides
 `bun run package:smoke` and clean consumers that install the packed tarball with
 both npm and Bun. Check ESM exports, declarations, browser globals, inert imports,
 explicit initialization, opt-out/GPC, and automation guards. Exercise older supported
-consumer runtimes as well as the new build runtime; a new build runtime does not
+consumer runtimes and declaration compilers as well as the new build runtime;
+TypeScript compiler upgrades need packed-declaration checks with the previous
+supported TypeScript lines, not just the compiler that emitted them; pass installed
+compiler paths to `bun run package:smoke` as [scripts](../scripts/README.md) describes.
+A new build runtime does not
 itself justify a new SDK runtime floor. Run evidence and exact tested versions belong
 in the PR, not this document.
 
@@ -45,18 +49,13 @@ signing/readiness result; release signing and store actions require separate sco
 
 ## Cloudflare and authentication
 
-Read [operations](operations.md) before changing Wrangler or Better Auth. Match the
-actual account, Worker names, routes, D1 binding/ID, and deployed version against
-both Wrangler configurations. Query existing migration-table and schema metadata
-read-only; `wrangler d1 migrations list --remote` can initialize a missing table,
-so it is not an acceptable substitute for a read-only SQL inspection.
-
-Better Auth 1.7 uses the direct D1 adapter, CT's `auth_*` names, and millisecond
-SQLite dates. The account schema has no issuer column. Compare the installed
-schema and [upstream changes](https://github.com/better-auth/better-auth/releases)
-against the local migration fixtures and live schema before inferring any migration.
-Keep API/admin auth versions aligned. Preserve admin route authentication, existing
-public collector behavior, privacy/opt-outs/GPC, and read-only production inspection.
+Read [operations](operations.md) for the authoritative Worker/D1 inspection and
+Better Auth schema procedure. Keep API/admin auth versions aligned, and compare
+[upstream schema changes](https://github.com/better-auth/better-auth/releases)
+against that procedure before inferring a migration. Preserve authenticated admin
+routes, public collector behavior, privacy/opt-outs/GPC, and read-only production
+inspection. In particular, `wrangler d1 migrations list --remote` may initialize
+a missing table; use read-only SQL against existing metadata instead.
 
 Run the actual build previews and isolated browser suite; a version query or install
 alone is not infrastructure compatibility evidence. Keep `compatibility_date` fixed
@@ -71,12 +70,12 @@ Report remaining advisory IDs, owning direct dependency paths, exposure, and the
 revisit condition. A clean Ruby or npm audit is not coverage of native Maven/Swift
 artifacts, store signing, or deployment state.
 
-The latest `web-ext` 10.8.0 dependency graph still includes `deepmerge` 4.3.1 and
-`minimatch` 3.1.5. The npm advisories
+When `web-ext` retains vulnerable `deepmerge` or `minimatch` transitive versions,
+trace the owners of
 [GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4) and
-[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) remain in
-development-only extension tooling, not the SDK or Worker runtime. Do not suppress
-the findings or force incompatible transitive majors. Revisit on a
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249), and
+verify whether exposure is confined to development-only extension tooling. Do not
+suppress the findings or force incompatible transitive majors. Revisit on a
 [web-ext release](https://github.com/mozilla/web-ext/releases) that adopts patched
 owners/ranges, and rerun extension lint/build/tests and the full audit.
 
