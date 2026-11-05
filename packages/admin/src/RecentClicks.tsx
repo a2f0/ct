@@ -10,6 +10,12 @@ import {
   time,
 } from "./data";
 import type { Link } from "./filters";
+import {
+  idlePager,
+  type PagerEvent,
+  type PagerState,
+  pagerTransition,
+} from "./pager";
 
 export function RecentClicks({
   initial,
@@ -25,27 +31,39 @@ export function RecentClicks({
   onForgotten: (result: { ip: string; deleted: number }) => void;
 }) {
   const [data, setData] = useState(initial);
-  const [paging, setPaging] = useState(false);
-  const [error, setError] = useState("");
-  const [requiresRefresh, setRequiresRefresh] = useState(false);
+  // The ref lets repeated observer callbacks see a start before React commits.
+  const pagerRef = useRef<PagerState>(idlePager);
+  const [pager, setPager] = useState<PagerState>(idlePager);
+  const requests = useRef(0);
   const active = useRef<AbortController | null>(null);
-  const busy = useRef(false);
   const consumed = useRef(new Set<string>());
   const sentinel = useRef<HTMLDivElement | null>(null);
   const menu = useContextMenu<string>();
   const [forgetting, setForgetting] = useState<string | null>(null);
+  const paging = pager.status === "loading";
+  const error =
+    pager.status === "failed" || pager.status === "stalled"
+      ? pager.message
+      : "";
+  const requiresRefresh = pager.status === "stalled";
+
+  const dispatch = useCallback((event: PagerEvent) => {
+    const next = pagerTransition(pagerRef.current, event);
+    pagerRef.current = next;
+    setPager(next);
+    return next;
+  }, []);
 
   useEffect(() => () => active.current?.abort(), []);
 
   const loadMore = useCallback(async () => {
     const cursor = data.nextCursor;
-    // Observer callbacks can repeat before React commits a loading state.
-    if (!cursor || busy.current) return;
-    busy.current = true;
+    if (!cursor) return;
+    const request = ++requests.current;
+    const started = dispatch({ type: "start", request });
+    if (started.status !== "loading" || started.request !== request) return;
     const controller = new AbortController();
     active.current = controller;
-    setPaging(true);
-    setError("");
     try {
       const next = await getData<Events>(
         `/api/events?${query}&cursor=${encodeURIComponent(cursor)}`,
@@ -56,10 +74,13 @@ export function RecentClicks({
         next.nextCursor &&
         (next.nextCursor === cursor || consumed.current.has(next.nextCursor))
       ) {
-        setRequiresRefresh(true);
-        throw new Error(
-          "Could not load older clicks. Use Refresh data to restart this list.",
-        );
+        dispatch({
+          type: "stalled",
+          request,
+          message:
+            "Could not load older clicks. Use Refresh data to restart this list.",
+        });
+        return;
       }
       consumed.current.add(cursor);
       setData((current) => {
@@ -77,20 +98,19 @@ export function RecentClicks({
           nextCursor: next.nextCursor,
         };
       });
+      dispatch({ type: "loaded", request });
     } catch (cause) {
       if (!controller.signal.aborted)
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : "Unable to load more clicks.",
-        );
-    } finally {
-      if (!controller.signal.aborted) {
-        busy.current = false;
-        setPaging(false);
-      }
+        dispatch({
+          type: "failed",
+          request,
+          message:
+            cause instanceof Error
+              ? cause.message
+              : "Unable to load more clicks.",
+        });
     }
-  }, [data.nextCursor, query]);
+  }, [data.nextCursor, query, dispatch]);
 
   useEffect(() => {
     if (
