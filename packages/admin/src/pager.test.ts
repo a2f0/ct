@@ -74,6 +74,19 @@ describe("pagerTransition", () => {
     ).toEqual(loading(2));
   });
 
+  test("a replacement request after a failure can finish", () => {
+    // loadMore starts its fetch only when its own tag entered loading.
+    expect(
+      run(
+        idlePager,
+        { type: "start", request: 1 },
+        { type: "failed", request: 1, message: "Network down" },
+        { type: "start", request: 2 },
+        { type: "loaded", request: 2 },
+      ),
+    ).toBe(idlePager);
+  });
+
   test("keeps a stalled list stalled until it remounts", () => {
     expect(
       run(
