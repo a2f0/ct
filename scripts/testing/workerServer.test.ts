@@ -82,6 +82,34 @@ test("a server that takes the port while the Worker starts is refused", async ()
   }
 });
 
+test("a Worker replaced while its answer is in flight is refused", async () => {
+  const port = freePort();
+  // This child answers once and exits; another server then takes the port
+  // before the answer reaches startWorker.
+  const answerOnce = [
+    process.execPath,
+    "-e",
+    `Bun.serve({ hostname: "127.0.0.1", port: ${port}, fetch: () => { setTimeout(() => process.exit(0), 0); return new Response("own"); } }); setInterval(() => {}, 1000);`,
+  ];
+  const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const response = await fetch(input, init);
+    for (;;)
+      try {
+        foreignServer(port);
+        break;
+      } catch {
+        await Bun.sleep(10);
+      }
+    return response;
+  }) as typeof fetch;
+  await expect(
+    startWorker(answerOnce, port, `http://127.0.0.1:${port}/login`, {
+      ...options,
+      fetcher,
+    }),
+  ).rejects.toThrow(/exited before it was ready|Another process took port/);
+});
+
 test("a Worker that exits before it is ready fails at once", async () => {
   const port = freePort();
   const started = Date.now();

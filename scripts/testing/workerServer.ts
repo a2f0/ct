@@ -11,10 +11,16 @@ export async function startWorker(
   command: string[],
   port: number,
   url: string,
-  options: { cwd?: string; attempts?: number; pauseMs?: number } = {},
+  options: {
+    cwd?: string;
+    attempts?: number;
+    pauseMs?: number;
+    fetcher?: typeof fetch;
+  } = {},
 ): Promise<Subprocess> {
   const attempts = options.attempts ?? 120;
   const pauseMs = options.pauseMs ?? 500;
+  const fetcher = options.fetcher ?? fetch;
   if ((await listeners(port)).length)
     throw new Error(
       `Something already listens on port ${port}; stop it before starting the test Worker.`,
@@ -24,23 +30,29 @@ export async function startWorker(
     stdout: "ignore",
     stderr: "inherit",
   });
+  // Every await can let the child exit and another server bind the port, so
+  // the answer counts only when the child still owns the port afterwards.
+  const owns = async () => {
+    if (server.exitCode !== null || server.signalCode !== null)
+      throw new Error(
+        `The test Worker exited before it was ready (${server.exitCode ?? server.signalCode}).`,
+      );
+    const pids = await listeners(port);
+    if (!pids.length) return false;
+    const own = await processTree(server.pid);
+    if (pids.some((pid) => !own.has(pid)))
+      throw new Error(
+        `Another process took port ${port} while the test Worker started.`,
+      );
+    return true;
+  };
   try {
     for (let attempt = 0; ; attempt += 1) {
-      if (server.exitCode !== null || server.signalCode !== null)
-        throw new Error(
-          `The test Worker exited before it was ready (${server.exitCode ?? server.signalCode}).`,
-        );
-      const pids = await listeners(port);
-      if (pids.length) {
-        const own = await processTree(server.pid);
-        if (pids.some((pid) => !own.has(pid)))
-          throw new Error(
-            `Another process took port ${port} while the test Worker started.`,
-          );
-        const response = await fetch(url, {
+      if (await owns()) {
+        const response = await fetcher(url, {
           signal: AbortSignal.timeout(5_000),
         }).catch(() => null);
-        if (response?.ok) return server;
+        if (response?.ok && (await owns())) return server;
       }
       if (attempt === attempts)
         throw new Error("The test Worker did not start");
