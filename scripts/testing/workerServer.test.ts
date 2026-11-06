@@ -19,6 +19,16 @@ function serving(port: number) {
     `Bun.serve({ hostname: "127.0.0.1", port: ${port}, fetch: () => new Response("own") }); setInterval(() => {}, 1000);`,
   ];
 }
+// Like wrangler and its workerd, a wrapper whose own child serves the port; the
+// wrapper stops that child when it is stopped.
+function wrapping(port: number) {
+  const serve = JSON.stringify(serving(port));
+  return [
+    process.execPath,
+    "-e",
+    `const child = Bun.spawn(${serve}, { stdio: ["ignore", "ignore", "inherit"] }); process.on("SIGTERM", () => { child.kill(); child.exited.then(() => process.exit(0)); }); setInterval(() => {}, 1000);`,
+  ];
+}
 // A child that is still starting and has not bound its port; it creates
 // `marker` once it runs, which is after startWorker's first listener check.
 function starting(marker: string) {
@@ -37,6 +47,15 @@ function foreignServer(port = 0) {
   });
   servers.push(server);
   return server.port ?? 0;
+}
+
+async function bindWhenFree(port: number) {
+  for (;;)
+    try {
+      return foreignServer(port);
+    } catch {
+      await Bun.sleep(10);
+    }
 }
 
 function freePort() {
@@ -95,13 +114,7 @@ test("a Worker replaced while its answer is in flight is refused", async () => {
   ];
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const response = await fetch(input, init);
-    for (;;)
-      try {
-        foreignServer(port);
-        break;
-      } catch {
-        await Bun.sleep(10);
-      }
+    await bindWhenFree(port);
     return response;
   }) as typeof fetch;
   await expect(
@@ -147,4 +160,33 @@ test("the started Worker is returned once it answers, and owns the port until it
   await expect(assertOwnsPort(server, port)).rejects.toThrow(
     "The test Worker exited",
   );
+});
+
+test("a Worker whose own child serves the port is ready, and a replacement is refused", async () => {
+  const port = freePort();
+  const url = `http://127.0.0.1:${port}/login`;
+  const server = await startWorker(wrapping(port), port, url, options);
+  try {
+    expect(await (await fetch(url)).text()).toBe("own");
+    await assertOwnsPort(server, port);
+    // The serving grandchild dies while the wrapper lives on, and another
+    // server takes the port.
+    const listener = Bun.spawnSync([
+      "lsof",
+      "-nP",
+      `-iTCP:${port}`,
+      "-sTCP:LISTEN",
+      "-t",
+    ]);
+    const pid = Number(listener.stdout.toString().trim());
+    expect(pid).not.toBe(server.pid);
+    process.kill(pid, "SIGKILL");
+    await bindWhenFree(port);
+    await expect(assertOwnsPort(server, port)).rejects.toThrow(
+      `Another process listens on port ${port}`,
+    );
+  } finally {
+    server.kill();
+    await server.exited;
+  }
 });
