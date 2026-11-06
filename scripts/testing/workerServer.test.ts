@@ -1,4 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
+import { existsSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { startWorker } from "./workerServer";
 
 const servers: { stop(force?: boolean): unknown }[] = [];
@@ -15,8 +19,15 @@ function serving(port: number) {
     `Bun.serve({ hostname: "127.0.0.1", port: ${port}, fetch: () => new Response("own") }); setInterval(() => {}, 1000);`,
   ];
 }
-// A child that is still starting and has not bound its port.
-const starting = [process.execPath, "-e", "setInterval(() => {}, 1000);"];
+// A child that is still starting and has not bound its port; it creates
+// `marker` once it runs, which is after startWorker's first listener check.
+function starting(marker: string) {
+  return [
+    process.execPath,
+    "-e",
+    `require("node:fs").writeFileSync(${JSON.stringify(marker)}, ""); setInterval(() => {}, 1000);`,
+  ];
+}
 
 function foreignServer(port = 0) {
   const server = Bun.serve({
@@ -54,15 +65,21 @@ test("a server already on the port is refused, not mistaken for the Worker", asy
 
 test("a server that takes the port while the Worker starts is refused", async () => {
   const port = freePort();
-  const started = startWorker(
-    starting,
-    port,
-    `http://127.0.0.1:${port}/login`,
-    options,
-  );
-  await Bun.sleep(200);
-  foreignServer(port);
-  await expect(started).rejects.toThrow(`Another process took port ${port}`);
+  const scratch = await mkdtemp(join(tmpdir(), "ct-worker-server-"));
+  try {
+    const marker = join(scratch, "started");
+    const started = startWorker(
+      starting(marker),
+      port,
+      `http://127.0.0.1:${port}/login`,
+      options,
+    );
+    while (!existsSync(marker)) await Bun.sleep(10);
+    foreignServer(port);
+    await expect(started).rejects.toThrow(`Another process took port ${port}`);
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
+  }
 });
 
 test("a Worker that exits before it is ready fails at once", async () => {
