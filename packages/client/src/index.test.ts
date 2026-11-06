@@ -424,6 +424,56 @@ describe("queue and privacy", () => {
     await ct.flush();
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
+  test("hiding the page sends clicks queued during a request once", async () => {
+    const ct = tracker();
+    ct.init();
+    click("<button>First</button>");
+    const finish: ((response: Response) => void)[] = [];
+    globalThis.fetch = mock((_url: string, init?: RequestInit) => {
+      requests.push({ body: JSON.parse(String(init?.body)), init: init ?? {} });
+      return new Promise<Response>((resolve) => finish.push(resolve));
+    }) as unknown as typeof fetch;
+    const first = ct.flush();
+    // A navigation click lands while the earlier batch is still in flight.
+    click('<a href="/next">Next</a>');
+    window.dispatchEvent(new Event("pagehide"));
+    Object.defineProperty(browser.document, "visibilityState", {
+      value: "hidden",
+      configurable: true,
+    });
+    browser.document.dispatchEvent(new browser.Event("visibilitychange"));
+    expect(requests.map((request) => request.body.events.length)).toEqual([
+      1, 1,
+    ]);
+    expect(requests[1]?.body.events[0]?.target).toBe("a");
+    expect(requests[1]?.init.keepalive).toBe(true);
+    for (const resolve of finish) resolve(new Response(null, { status: 202 }));
+    await first;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await ct.flush();
+    expect(requests).toHaveLength(2);
+  });
+  test("teardown aborts every request a hidden page started", async () => {
+    const ct = tracker();
+    ct.init();
+    click();
+    const signals: AbortSignal[] = [];
+    globalThis.fetch = mock((_url: string, init?: RequestInit) => {
+      if (init?.signal) signals.push(init.signal);
+      return new Promise<Response>((_resolve, reject) =>
+        init?.signal?.addEventListener("abort", () =>
+          reject(new Error("aborted")),
+        ),
+      );
+    }) as unknown as typeof fetch;
+    const first = ct.flush();
+    click();
+    window.dispatchEvent(new Event("pagehide"));
+    expect(signals).toHaveLength(2);
+    ct.destroy();
+    expect(signals.map((signal) => signal.aborted)).toEqual([true, true]);
+    await first;
+  });
   test("permanent rejections drop invalid data rather than retry forever", async () => {
     const ct = tracker();
     ct.init();
