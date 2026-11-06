@@ -30,29 +30,15 @@ export async function startWorker(
     stdout: "ignore",
     stderr: "inherit",
   });
-  // Every await can let the child exit and another server bind the port, so
-  // the answer counts only when the child still owns the port afterwards.
-  const owns = async () => {
-    if (server.exitCode !== null || server.signalCode !== null)
-      throw new Error(
-        `The test Worker exited before it was ready (${server.exitCode ?? server.signalCode}).`,
-      );
-    const pids = await listeners(port);
-    if (!pids.length) return false;
-    const own = await processTree(server.pid);
-    if (pids.some((pid) => !own.has(pid)))
-      throw new Error(
-        `Another process took port ${port} while the test Worker started.`,
-      );
-    return true;
-  };
   try {
     for (let attempt = 0; ; attempt += 1) {
-      if (await owns()) {
+      // Every await can let the child exit and another server bind the port,
+      // so an answer counts only when the child still owns the port after it.
+      if (await ownsPort(server, port)) {
         const response = await fetcher(url, {
           signal: AbortSignal.timeout(5_000),
         }).catch(() => null);
-        if (response?.ok && (await owns())) return server;
+        if (response?.ok && (await ownsPort(server, port))) return server;
       }
       if (attempt === attempts)
         throw new Error("The test Worker did not start");
@@ -63,6 +49,39 @@ export async function startWorker(
     await server.exited;
     throw error;
   }
+}
+
+/**
+ * Whether the Worker is the only listener on `port` (false while nothing
+ * listens yet). Throws once it has exited or another process listens there.
+ */
+async function ownsPort(server: Subprocess, port: number): Promise<boolean> {
+  const exited = () => {
+    if (server.exitCode !== null || server.signalCode !== null)
+      throw new Error(
+        `The test Worker exited (${server.exitCode ?? server.signalCode}).`,
+      );
+  };
+  exited();
+  const pids = await listeners(port);
+  const own = pids.length ? await processTree(server.pid) : new Set<number>();
+  // The snapshots above can outlast the child.
+  exited();
+  if (pids.some((pid) => !own.has(pid)))
+    throw new Error(`Another process listens on port ${port}.`);
+  return pids.length > 0;
+}
+
+/**
+ * Fails unless the Worker is still running and alone on `port`, so a run whose
+ * Worker stopped or was replaced midway is not reported as passing.
+ */
+export async function assertOwnsPort(
+  server: Subprocess,
+  port: number,
+): Promise<void> {
+  if (!(await ownsPort(server, port)))
+    throw new Error(`The test Worker no longer listens on port ${port}.`);
 }
 
 /** PIDs listening on a local TCP port; lsof exits 1 when there are none. */

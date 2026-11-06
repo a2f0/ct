@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { startWorker } from "./workerServer";
+import { assertOwnsPort, startWorker } from "./workerServer";
 
 const servers: { stop(force?: boolean): unknown }[] = [];
 afterEach(() => {
@@ -76,7 +76,9 @@ test("a server that takes the port while the Worker starts is refused", async ()
     );
     while (!existsSync(marker)) await Bun.sleep(10);
     foreignServer(port);
-    await expect(started).rejects.toThrow(`Another process took port ${port}`);
+    await expect(started).rejects.toThrow(
+      `Another process listens on port ${port}`,
+    );
   } finally {
     await rm(scratch, { recursive: true, force: true });
   }
@@ -107,7 +109,7 @@ test("a Worker replaced while its answer is in flight is refused", async () => {
       ...options,
       fetcher,
     }),
-  ).rejects.toThrow(/exited before it was ready|Another process took port/);
+  ).rejects.toThrow(/The test Worker exited|Another process listens on port/);
 });
 
 test("a Worker that exits before it is ready fails at once", async () => {
@@ -120,11 +122,11 @@ test("a Worker that exits before it is ready fails at once", async () => {
       `http://127.0.0.1:${port}/login`,
       { attempts: 200, pauseMs: 50 },
     ),
-  ).rejects.toThrow("exited before it was ready (3)");
+  ).rejects.toThrow("The test Worker exited (3)");
   expect(Date.now() - started).toBeLessThan(5_000);
 });
 
-test("the started Worker is returned once it answers", async () => {
+test("the started Worker is returned once it answers, and owns the port until it stops", async () => {
   const port = freePort();
   const server = await startWorker(
     serving(port),
@@ -136,8 +138,13 @@ test("the started Worker is returned once it answers", async () => {
     expect(await (await fetch(`http://127.0.0.1:${port}/login`)).text()).toBe(
       "own",
     );
+    await assertOwnsPort(server, port);
   } finally {
     server.kill();
     await server.exited;
   }
+  // A run whose Worker stopped, or was replaced, does not count.
+  await expect(assertOwnsPort(server, port)).rejects.toThrow(
+    "The test Worker exited",
+  );
 });

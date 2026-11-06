@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { startWorker } from "./workerServer";
+import { assertOwnsPort, startWorker } from "./workerServer";
 
 // Drives the CT app on a booted iOS simulator or a connected Android device
 // against the isolated browser-test admin Worker. CI has no simulators.
@@ -160,6 +160,8 @@ try {
     ["maestro", "--device", device, "test", "maestro/signIn.yaml"],
     app,
   );
+  // The journey proves this checkout only if its Worker served it throughout.
+  await assertOwnsPort(server, port);
 } finally {
   server.kill();
   if (platform === "android")
