@@ -71,6 +71,19 @@ repository-owned app-store-readiness skill, kept byte-identical with balebase an
 nc as docs/readiness.md describes. Brand sources live in
 assets/brand and image outputs are declared in agent-tool.json.
 
+State machines: make implicit state machines explicit when you write or change
+code: one closed state type (a discriminated union, enum, or sealed type)
+carrying each state's data, typed events, and one pure transition function, with
+effects run on entering a state and async work tagged so only the current request
+can finish. Follow the `explicit-state-machines` skill for what to convert, what
+to leave alone, and how to prove behavior did not change;
+`agent-tool state-machines` lists leads. Reviews flag new implicit machines.
+Here machines cluster in packages/admin/src components; tag states with
+`status`, keep each reducer beside its caller with its tests (pager.ts,
+pager.test.ts), and tag async events with a request id (`type` names events).
+The client tracker's scheduler fields are orthogonal concerns in the published
+SDK, not phases.
+
 Keep repository-owned scripts grouped by purpose under scripts/ and retain the
 package-script entrypoints when moving files. README covers setup and normal
 usage; docs/operations.md owns deployment and accounts, docs/api.md owns endpoint
