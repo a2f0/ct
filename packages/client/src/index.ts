@@ -20,7 +20,10 @@ export function createTracker(options: TrackerOptions): Tracker {
   let disabled = false;
   let queue: ClickEvent[] = [];
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let request: AbortController | undefined;
+  // Hiding the page may start a request beside the shared flush; each carries
+  // only clicks no other request holds, and teardown aborts them all.
+  const requests = new Set<AbortController>();
+  const sending = new Set<string>();
   let inFlight: Promise<void> | undefined;
   let failures = 0;
   let generation = 0;
@@ -31,7 +34,7 @@ export function createTracker(options: TrackerOptions): Tracker {
     queue = [];
     if (timer) clearTimeout(timer);
     timer = undefined;
-    request?.abort();
+    for (const request of requests) request.abort();
   }
 
   function blocked(): boolean {
@@ -42,8 +45,12 @@ export function createTracker(options: TrackerOptions): Tracker {
     return false;
   }
 
+  function unsent(): ClickEvent[] {
+    return queue.filter((event) => !sending.has(event.id)).slice(0, batchSize);
+  }
+
   function schedule(): void {
-    if (!initialized || !queue.length || timer) return;
+    if (!initialized || timer || !unsent().length) return;
     const delay = failures
       ? Math.min(60_000, interval * 2 ** Math.min(failures, 5))
       : interval;
@@ -55,9 +62,11 @@ export function createTracker(options: TrackerOptions): Tracker {
 
   async function send(): Promise<void> {
     const currentGeneration = generation;
-    const batch = queue.slice(0, batchSize);
+    const batch = unsent();
+    if (!batch.length) return;
+    for (const event of batch) sending.add(event.id);
     const controller = new AbortController();
-    request = controller;
+    requests.add(controller);
     const timeout = setTimeout(() => controller.abort(), 10_000);
     try {
       const response = await fetch(endpoint, {
@@ -89,7 +98,8 @@ export function createTracker(options: TrackerOptions): Tracker {
       if (currentGeneration === generation) failures++;
     } finally {
       clearTimeout(timeout);
-      if (request === controller) request = undefined;
+      requests.delete(controller);
+      for (const event of batch) sending.delete(event.id);
     }
   }
 
@@ -131,11 +141,24 @@ export function createTracker(options: TrackerOptions): Tracker {
   function privacyChanged(): void {
     blocked();
   }
+  // Nothing runs after the page unloads, so the shared request in flight
+  // cannot be awaited for clicks queued after it started (often the one that
+  // navigated away): send those now as well.
+  function hidden(): void {
+    if (!inFlight) {
+      void flush();
+      return;
+    }
+    if (!initialized || blocked() || !unsent().length) return;
+    if (timer) clearTimeout(timer);
+    timer = undefined;
+    void send().finally(schedule);
+  }
   function visibilityChanged(): void {
-    if (document.visibilityState === "hidden") void flush();
+    if (document.visibilityState === "hidden") hidden();
   }
   function pageHidden(): void {
-    void flush();
+    hidden();
   }
   function online(): void {
     failures = 0;

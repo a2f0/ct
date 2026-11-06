@@ -58,7 +58,7 @@
     },
     "packages/client": {
       "name": "@a2f0/ct-client",
-      "version": "0.1.7",
+      "version": "0.1.8",
     },
     "packages/extension": {
       "name": "@ct/extension",
