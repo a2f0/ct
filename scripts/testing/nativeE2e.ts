@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { refuseRunningServer, startWorker } from "./workerServer";
 
 // Drives the CT app on a booted iOS simulator or a connected Android device
 // against the isolated browser-test admin Worker. CI has no simulators.
@@ -115,7 +116,9 @@ const device =
   chosenDevice ??
   (platform === "ios" ? await iosDevice() : await androidDevice());
 // The Worker serves the built dashboard, and the flow signs in to the browser
-// suite's fixture account in its freshly reset database.
+// suite's fixture account in its freshly reset database. Check the port before
+// that reset, which would also wipe the database of a Worker already running.
+await refuseRunningServer(`${worker}/login`);
 await run(["bun", "run", "build"]);
 await run(["bun", "scripts/testing/browserPrepare.ts"]);
 const now = Date.now();
@@ -132,7 +135,7 @@ await run([
   "--command",
   `INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, app, environment, ip_address) VALUES ('skyline', 'native-1', ${now}, ${now}, '/skyline-3d', 'button', 'Launch', 'skyline', 'production', '203.0.113.8'), ('skyline', 'native-2', ${now - 60_000}, ${now - 60_000}, '/skyline-3d', 'a', 'Docs', 'skyline', 'production', '198.51.100.7')`,
 ]);
-const server = Bun.spawn(
+const server = await startWorker(
   [
     "bunx",
     "--no-install",
@@ -145,14 +148,10 @@ const server = Bun.spawn(
     "--ip",
     "127.0.0.1",
   ],
-  { cwd: root, stdout: "ignore", stderr: "inherit" },
+  `${worker}/login`,
+  { cwd: root },
 );
 try {
-  for (let attempt = 0; ; attempt += 1) {
-    if ((await fetch(`${worker}/login`).catch(() => null))?.ok) break;
-    if (attempt === 120) throw new Error("The test admin Worker did not start");
-    await Bun.sleep(500);
-  }
   await run(["bun", "run", "build:e2e"], app);
   await run(["bun", "run", "cap:sync", platform], app);
   await (platform === "ios" ? installIos(device) : installAndroid(device));
