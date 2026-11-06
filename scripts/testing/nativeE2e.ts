@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { refuseRunningServer, startWorker } from "./workerServer";
+import { startWorker } from "./workerServer";
 
 // Drives the CT app on a booted iOS simulator or a connected Android device
 // against the isolated browser-test admin Worker. CI has no simulators.
@@ -11,7 +11,8 @@ if (platform !== "ios" && platform !== "android")
 
 const root = resolve(import.meta.dir, "../..");
 const app = resolve(root, "packages/app-capacitor");
-const worker = "http://127.0.0.1:4176";
+const port = 4176;
+const worker = `http://127.0.0.1:${port}`;
 
 async function run(command: string[], cwd = root) {
   const child = Bun.spawn(command, {
@@ -116,25 +117,9 @@ const device =
   chosenDevice ??
   (platform === "ios" ? await iosDevice() : await androidDevice());
 // The Worker serves the built dashboard, and the flow signs in to the browser
-// suite's fixture account in its freshly reset database. Check the port before
-// that reset, which would also wipe the database of a Worker already running.
-await refuseRunningServer(`${worker}/login`);
+// suite's fixture account in its freshly reset database. Owning the port first
+// keeps that reset away from a Worker that another run already started there.
 await run(["bun", "run", "build"]);
-await run(["bun", "scripts/testing/browserPrepare.ts"]);
-const now = Date.now();
-await run([
-  "bunx",
-  "--no-install",
-  "wrangler",
-  "d1",
-  "execute",
-  "ct-test",
-  "--local",
-  "--config",
-  "tests/wrangler.api.json",
-  "--command",
-  `INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, app, environment, ip_address) VALUES ('skyline', 'native-1', ${now}, ${now}, '/skyline-3d', 'button', 'Launch', 'skyline', 'production', '203.0.113.8'), ('skyline', 'native-2', ${now - 60_000}, ${now - 60_000}, '/skyline-3d', 'a', 'Docs', 'skyline', 'production', '198.51.100.7')`,
-]);
 const server = await startWorker(
   [
     "bunx",
@@ -144,14 +129,30 @@ const server = await startWorker(
     "--config",
     "tests/wrangler.admin.json",
     "--port",
-    "4176",
+    String(port),
     "--ip",
     "127.0.0.1",
   ],
+  port,
   `${worker}/login`,
   { cwd: root },
 );
 try {
+  await run(["bun", "scripts/testing/browserPrepare.ts"]);
+  const now = Date.now();
+  await run([
+    "bunx",
+    "--no-install",
+    "wrangler",
+    "d1",
+    "execute",
+    "ct-test",
+    "--local",
+    "--config",
+    "tests/wrangler.api.json",
+    "--command",
+    `INSERT INTO clicks (site, id, timestamp, received_at, page, target, label, app, environment, ip_address) VALUES ('skyline', 'native-1', ${now}, ${now}, '/skyline-3d', 'button', 'Launch', 'skyline', 'production', '203.0.113.8'), ('skyline', 'native-2', ${now - 60_000}, ${now - 60_000}, '/skyline-3d', 'a', 'Docs', 'skyline', 'production', '198.51.100.7')`,
+  ]);
   await run(["bun", "run", "build:e2e"], app);
   await run(["bun", "run", "cap:sync", platform], app);
   await (platform === "ios" ? installIos(device) : installAndroid(device));

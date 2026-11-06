@@ -1,19 +1,24 @@
 import type { Subprocess } from "bun";
 
 /**
- * Starts a local Worker and waits until that process, not whatever else holds
- * its port, answers `url`. Wrangler exits when the port is taken, so a server
- * already listening there would otherwise pass the readiness poll and the run
- * would test another checkout's build and database.
+ * Starts a local Worker on `port` and waits until it answers `url`. Readiness
+ * counts only when every process listening on the port belongs to the started
+ * Worker: wrangler exits when the port is taken, so another server there would
+ * otherwise pass the poll and the run would test another checkout's build and
+ * database.
  */
 export async function startWorker(
   command: string[],
+  port: number,
   url: string,
   options: { cwd?: string; attempts?: number; pauseMs?: number } = {},
 ): Promise<Subprocess> {
   const attempts = options.attempts ?? 120;
   const pauseMs = options.pauseMs ?? 500;
-  await refuseRunningServer(url);
+  if ((await listeners(port)).length)
+    throw new Error(
+      `Something already listens on port ${port}; stop it before starting the test Worker.`,
+    );
   const server = Bun.spawn(command, {
     cwd: options.cwd ?? process.cwd(),
     stdout: "ignore",
@@ -25,7 +30,18 @@ export async function startWorker(
         throw new Error(
           `The test Worker exited before it was ready (${server.exitCode ?? server.signalCode}).`,
         );
-      if ((await fetch(url).catch(() => null))?.ok) return server;
+      const pids = await listeners(port);
+      if (pids.length) {
+        const own = await processTree(server.pid);
+        if (pids.some((pid) => !own.has(pid)))
+          throw new Error(
+            `Another process took port ${port} while the test Worker started.`,
+          );
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(5_000),
+        }).catch(() => null);
+        if (response?.ok) return server;
+      }
       if (attempt === attempts)
         throw new Error("The test Worker did not start");
       await Promise.race([server.exited, Bun.sleep(pauseMs)]);
@@ -37,10 +53,38 @@ export async function startWorker(
   }
 }
 
-/** Fails when anything already answers `url`, such as another run's Worker. */
-export async function refuseRunningServer(url: string): Promise<void> {
-  if (await fetch(url).catch(() => null))
-    throw new Error(
-      `Something already serves ${url}; stop it before starting the test Worker.`,
-    );
+/** PIDs listening on a local TCP port; lsof exits 1 when there are none. */
+async function listeners(port: number): Promise<number[]> {
+  const lsof = Bun.spawn(
+    ["lsof", "-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"],
+    { stdout: "pipe", stderr: "pipe" },
+  );
+  const [text, exitCode] = await Promise.all([
+    new Response(lsof.stdout).text(),
+    lsof.exited,
+  ]);
+  const pids = text.split(/\s+/).filter(Boolean).map(Number);
+  if (exitCode !== 0 && (exitCode !== 1 || pids.length))
+    throw new Error(`Could not list listeners on port ${port}`);
+  return pids;
+}
+
+/** The process and all of its descendants. */
+async function processTree(root: number): Promise<Set<number>> {
+  const ps = Bun.spawn(["ps", "-A", "-o", "pid=,ppid="], { stdout: "pipe" });
+  const [text, exitCode] = await Promise.all([
+    new Response(ps.stdout).text(),
+    ps.exited,
+  ]);
+  if (exitCode !== 0) throw new Error("Could not list processes");
+  const children = new Map<number, number[]>();
+  for (const line of text.trim().split("\n")) {
+    const [pid, parent] = line.trim().split(/\s+/).map(Number);
+    if (pid === undefined || parent === undefined) continue;
+    children.set(parent, [...(children.get(parent) ?? []), pid]);
+  }
+  const tree = new Set([root]);
+  for (const pid of tree)
+    for (const child of children.get(pid) ?? []) tree.add(child);
+  return tree;
 }
