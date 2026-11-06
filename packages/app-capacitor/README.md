@@ -96,7 +96,9 @@ Runs `maestro/signIn.yaml` in the real app with Maestro: sign in, read data,
 keep the session across page loads and a relaunch, switch theme, and sign out,
 all through native HTTP. It resets the browser suite's isolated database and
 fixture account, starts that admin Worker on 127.0.0.1:4176, builds the bundle
-in Vite's `e2e` mode to call it, and restores the store bundle afterwards.
+in Vite's `e2e` mode to call it, and restores the store bundle afterwards. It
+starts that Worker before the reset and stops when another process listens on
+the port, such as a browser-suite run or another clone's Worker.
 Android reaches the Worker through `adb reverse`; only debug builds allow
 cleartext, and only to 127.0.0.1 (`android/app/src/debug`). CI has no
 simulators, so run both after changing the shell, the dashboard's networking,
