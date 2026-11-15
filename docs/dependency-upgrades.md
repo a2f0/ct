@@ -8,6 +8,11 @@ exception list. Query the configured registries rather than substituting prerele
 for stable direct dependencies. Preserve each owner's transitive ranges; a recursive
 Bun update refreshes permitted lock resolutions without adding blanket overrides.
 
+`mise.lock` is committed beside `.mise.toml`; regenerate it with `mise lock` whenever
+`.mise.toml` changes. Every workflow's `jdx/mise-action` `version` must read the
+lockfile's format (format 4 needs mise 2026.11.1 or later), so move those pins before
+the lock's format changes.
+
 `@a2f0/ct-client` has no runtime dependencies. Runtime/toolchain changes still need
 `bun run package:smoke` and clean consumers that install the packed tarball with
 both npm and Bun. Check ESM exports, declarations, browser globals, inert imports,
