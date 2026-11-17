@@ -219,5 +219,29 @@
     "signatureHeaderFallback": true,
     "rejectCoauthors": true,
     "subjects": true
+  },
+  "pushGate": {
+    "steps": [
+      {
+        "label": "lint",
+        "command": [
+          "bunx",
+          "--no-install",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "."
+        ]
+      },
+      {
+        "label": "typecheck",
+        "command": ["bun", "run", "typecheck"]
+      },
+      {
+        "label": "rubocop",
+        "command": ["bun", "run", "lint:rubocop"]
+      }
+    ],
+    "budgetSeconds": 60
   }
 }

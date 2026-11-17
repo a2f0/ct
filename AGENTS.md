@@ -15,8 +15,13 @@ sign Conventional Commits, preserve unrelated work, and never force-push or add
 attribution footers.
 
 Validate with bun run check, bun run test, bun run build, bun run package:smoke,
-and bun run test:browser. CI's verify job gates merges, including skill and
-permission drift.
+and bun run test:browser. CI's verify job runs them on every pull request and
+push to main and gates merges, including skill, permission, and push-gate drift.
+The pre-push hook is agent-tool's push gate (scripts/README.md): shared trust
+guards, then the static steps pushGate in agent-tool.json declares, never tests,
+builds, or installs. Before pushing, run the tests for the code you changed;
+when a CI job fails, read it with agent-tool pr logs --head <commit> and push a
+reviewed fix. A push's per-step timings are in agent-tool runs list.
 
 Run Bun tests through `bun run agent-tool bun test --log [-- args...]`, and
 other finite, noisy commands, such as installs, builds, linters, package
