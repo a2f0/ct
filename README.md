@@ -27,10 +27,11 @@ bun run dev # API on http://localhost:8787, static UI on http://127.0.0.1:5173
 ```
 
 Bun manages workspaces; Wrangler development and browser tooling run on Node;
-Ruby runs the mobile app's Fastlane lanes, their tests and RuboCop, which
-`bun run check` and the pre-push hook include. Vite on 5173 is for static UI
-development only; to sign in locally, run the admin Worker as the
-[API README](packages/api/README.md#local-development) describes.
+Ruby runs the mobile app's Fastlane lanes, their tests, which `bun run test`
+includes, and RuboCop, which `bun run check` and the pre-push hook include.
+Vite on 5173 is for static UI development only; to sign in locally, run the
+admin Worker as the [API README](packages/api/README.md#local-development)
+describes.
 
 ## Workspaces
 
@@ -63,8 +64,11 @@ bunx --no-install playwright install chromium firefox
 bun run test:browser
 ```
 
-`bun run verify` runs the first four, as the pre-push hook does. The browser
-suites need the Playwright browsers installed once.
+`bun run verify` runs the first four. The browser suites need the Playwright
+browsers installed once. CI runs all of them on every pull request and every
+push to `main`. The pre-push hook runs only quick static checks, as
+[repository scripts](scripts/README.md) describes, so run the tests for the
+code you changed before pushing.
 
 ## Guides
 

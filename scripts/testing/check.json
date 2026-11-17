@@ -23,6 +23,10 @@
     {
       "label": "agents",
       "command": ["bun", "run", "agents:check"]
+    },
+    {
+      "label": "push-gate",
+      "command": ["bun", "run", "lint:push-gate"]
     }
   ]
 }

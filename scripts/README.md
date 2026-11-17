@@ -9,7 +9,7 @@ inside their workspaces.
 | `admin/`     | Account provisioning and its D1 adapter                              | `bun run admin:user -- <arguments>`                                                  |
 | `deploy/`    | Worker deployment, site registry validation, live release readiness  | `bun run deploy:preview`, `bun run deploy`; publishing CI checks collector readiness |
 | `testing/`   | Browser fixture preparation, packed SDK smoke tests, native app runs | `bun run test:browser`, `bun run package:smoke`, `bun run test:native`               |
-| `git/hooks/` | Commit-message and pre-push gates                                    | `bun run hooks:install`                                                              |
+| `git/hooks/` | Commit-message hook and the generated pre-push push gate             | `bun run hooks:install`                                                              |
 
 After pulling hook-source changes, reinstall the hooks. The shared installer
 copies tracked `scripts/git/hooks/` sources
@@ -19,11 +19,10 @@ setting with `git config --local --unset core.hooksPath`, then run
 `bun run hooks:install`. Inspect other custom hook paths before changing them;
 use `--adopt` only after reviewing unmanaged hook replacements.
 
-`bun run check` records lint, typechecking, RuboCop, managed skills, and harness
-permission rules. `bun run verify`
-adds unit tests, builds, and packed SDK smoke tests; the pre-push hook also checks
-actual destination branches and signed, unattributed commits. Browser and
-extension validation remain separate documented CI steps. Registry decisions
+`bun run check` records lint, typechecking, RuboCop, managed skills, harness
+permission rules, and the push-gate check. `bun run verify` adds unit tests,
+builds, and packed SDK smoke tests. Browser and extension validation remain
+separate documented CI steps. Registry decisions
 use `bun run release:plan`; the [npm operations guide](../docs/operations.md#npm)
 owns version eligibility, collector readiness, and trusted-publishing gates.
 
@@ -43,7 +42,15 @@ the pinned agent-tool; repository-specific behavior stays here.
 See [operations](../docs/operations.md) for deployment and account commands,
 and the [API guide](../docs/api.md) for endpoint behavior.
 
-Pre-push validates commits newly introduced to a named remote. It excludes that
-remote's tracking refs even when updating an existing branch, so a normal merge
-of main does not recheck already published commits. URL-only destinations use
-the advertised previous tip, or all history on a first push.
+`pre-push` is the unchanged output of `agent-tool push-gate hook`, which runs
+agent-tool's push gate. Its shared guards check the installed hooks, managed
+skills and permission rules, and destination branch names, then the
+signatures, attribution, and binary files of the commits the push adds: those
+the destination does not already have, so integrating an updated main does not
+recheck published commits, while a destination with nothing in common is
+checked whole. It then runs the lint, typecheck and RuboCop steps that
+`pushGate` in `agent-tool.json` declares, records their timings in
+`agent-tool runs list`, and warns when the gate takes longer than its
+60-second budget. It runs no tests, builds, or installs; CI's required `verify`
+job does. `bun run lint:push-gate`, part of `bun run check`, fails when the hook
+drifts from that output or a declared step reaches a test run or an install.
