@@ -1,4 +1,6 @@
-export {};
+import { resolve } from "node:path";
+
+const root = resolve(import.meta.dir, "../..");
 
 for (const args of [
   ["d1", "migrations", "apply", "ct-test", "--local"],
@@ -23,7 +25,7 @@ for (const args of [
       "--config",
       "tests/wrangler.api.json",
     ],
-    { stdout: "inherit", stderr: "inherit" },
+    { cwd: root, stdout: "inherit", stderr: "inherit" },
   );
   if ((await child.exited) !== 0)
     throw new Error("Could not initialize isolated browser-test database");
@@ -41,7 +43,7 @@ const account = Bun.spawn(
     "browser@example.test",
     "--password-stdin",
   ],
-  { stdin: "pipe", stdout: "inherit", stderr: "inherit" },
+  { cwd: root, stdin: "pipe", stdout: "inherit", stderr: "inherit" },
 );
 account.stdin.write("isolated-browser-password-0001\n");
 account.stdin.end();
