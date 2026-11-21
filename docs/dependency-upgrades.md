@@ -86,10 +86,10 @@ owners/ranges, and rerun extension lint/build/tests and the full audit.
 
 ## Managed assets and publishing
 
-Agent-tool owns `.agents`, `.claude`, permission rules, and their manifests;
-regenerate them with `bun run agents:sync`, never patch their contents. The
-project-owned readiness skill is synchronized according to [readiness](readiness.md),
-not reformatted by Biome's Markdown formatter. Keep the producer copy byte-identical.
+Agent-tool owns `.agents`, `.claude`, permission rules, and their manifests,
+including the `app-store-readiness` skill; regenerate them with
+`bun run agents:sync`, never patch their contents or reformat them with Biome's
+Markdown formatter.
 
 Only the client package is version-prepared. The normal publish workflow triggers
 on its manifest change and is gated by `NPM_TRUSTED_PUBLISHING`; check that gate

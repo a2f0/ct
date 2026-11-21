@@ -1,9 +1,9 @@
 # Release readiness
 
-Use the [app-store-readiness skill](../skills/app-store-readiness/SKILL.md)
-for an iOS, Android, and web pre-release assessment of the CT app, and record
-each candidate's findings and remaining prerequisites in its PR. The readiness
-lanes below supply its artifact and store-record evidence.
+Use agent-tool's managed `app-store-readiness` skill for an iOS, Android, and
+web pre-release assessment of the CT app, and record each candidate's findings
+and remaining prerequisites in its PR. The readiness lanes below supply its
+artifact and store-record evidence.
 
 Run `bun run --cwd packages/app-capacitor ios:readiness` or `android:readiness`
 to inspect an existing signed release artifact of `net.a2f0.ct` and the
@@ -104,12 +104,11 @@ source edits during builds. Build numbering follows the
 
 a2f0/balebase and a2f0/nc keep byte-identical copies of
 `fastlane/lib/readiness.rb`, `readiness_artifacts.rb`, `readiness_stores.rb`,
-their library test `fastlane/test/readiness.test.ts`, and the
-`skills/app-store-readiness` skill. Change all three repositories together;
-the lanes, expectations, and this guide are each repository's own. Install the
-skill in a personal skill directory for Codex or Claude Code by linking
-`~/.claude/skills/app-store-readiness` or `~/.agents/skills/app-store-readiness`
-to one of those copies.
+and their library test `fastlane/test/readiness.test.ts`. Change all three
+repositories together; the lanes, expectations, and this guide are each
+repository's own. The `app-store-readiness` skill is agent-tool's:
+`bun run agents:sync` installs it from the pinned version in every repository,
+and changes to it go to a2f0/agent-tool.
 
 ## Device and web checks
 
