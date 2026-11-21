@@ -106,9 +106,9 @@ a2f0/balebase and a2f0/nc keep byte-identical copies of
 `fastlane/lib/readiness.rb`, `readiness_artifacts.rb`, `readiness_stores.rb`,
 and their library test `fastlane/test/readiness.test.ts`. Change all three
 repositories together; the lanes, expectations, and this guide are each
-repository's own. The `app-store-readiness` skill is agent-tool's:
-`bun run agents:sync` installs it from the pinned version in every repository,
-and changes to it go to a2f0/agent-tool.
+repository's own. The `app-store-readiness` skill is agent-tool's: each
+repository's `bun run agents:sync` installs it from its own agent-tool pin, and
+changes to it go to a2f0/agent-tool.
 
 ## Device and web checks
 
