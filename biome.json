@@ -6,7 +6,6 @@
       "**",
       "!!.agents",
       "!!.claude",
-      "!!skills/app-store-readiness",
       "!!**/dist",
       "!!**/node_modules",
       "!!**/.wrangler",
