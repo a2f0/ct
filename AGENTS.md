@@ -68,13 +68,12 @@ is configured. Never read, print, log, or commit secret values. Wrangler's exist
 OAuth session is sufficient for local deployment. Never copy another project's keys.
 
 Managed skills in .agents/skills and .claude/skills and the harness permission
-rules in .claude/settings.json, .codex/rules/agent-tool.rules and
-.gemini/policies/agent-tool.toml come from the exact agent-tool pin. Do not
-edit them; run bun run agents:sync after changing the pin or the
-permissions.executables classes in agent-tool.json, and commit the lockfile,
-skills, rules, .agent-tool-skills.json and .agent-tool-permissions.json
-together. Brand sources live in assets/brand and image outputs are declared in
-agent-tool.json.
+rules in .claude/settings.json and .codex/rules/agent-tool.rules come from the
+exact agent-tool pin. Do not edit them; run bun run agents:sync after changing
+the pin or the permissions.executables classes in agent-tool.json, and commit
+the lockfile, skills, rules, .agent-tool-skills.json and
+.agent-tool-permissions.json together. Brand sources live in assets/brand and
+image outputs are declared in agent-tool.json.
 
 State machines: make implicit state machines explicit when you write or change
 code: one closed state type (a discriminated union, enum, or sealed type)
